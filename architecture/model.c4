@@ -1,0 +1,63 @@
+// file: model.c4
+// Purpose: Logical model for E-Wallet project
+// Owner: Development Team
+
+specification {
+  element actor {
+    style {
+      shape person
+      color amber
+    }
+  }
+  element system
+  element service
+  element db {
+    style {
+      shape storage
+      icon tech:postgresql
+    }
+  }
+
+  deploymentNode environment
+  deploymentNode region
+
+  relationship sync
+  relationship async
+}
+
+model {
+  user = actor 'User'
+
+  eWallet = system 'E-Wallet System' {
+    apiService = service 'E-Wallet API' {
+      technology 'Spring Boot'
+    }
+    transactionDb = db 'Transaction Database' {
+      technology 'PostgreSQL'
+    }
+  }
+
+  // Relationships
+  user -> eWallet.apiService 'interacts with'
+  eWallet.apiService -> eWallet.transactionDb 'stores transaction data'
+}
+
+views {
+  view index {
+    title 'E-Wallet System Landscape'
+    include *
+    autoLayout LeftRight
+  }
+
+  view api of eWallet.apiService {
+    title 'E-Wallet API - Internal Dependencies'
+    include *
+    include -> eWallet.transactionDb
+  }
+
+  dynamic view userTransactionFlow {
+    title 'User Transaction Flow'
+    user -> eWallet.apiService 'initiates transaction'
+    eWallet.apiService -> eWallet.transactionDb 'records transaction'
+  }
+}
