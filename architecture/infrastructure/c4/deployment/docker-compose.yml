@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  api:
+    image: openjdk:17-jdk-slim
+    container_name: e-wallet-api
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgresql://user:password@transaction-db:5432/ewallet
+    depends_on:
+      - transaction-db
+    networks:
+      - ewallet-network
+
+  transaction-db:
+    image: postgres:13
+    container_name: transaction-db
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=ewallet
+    volumes:
+      - transaction-db-data:/var/lib/postgresql/data
+    networks:
+      - ewallet-network
+
+networks:
+  ewallet-network:
+    driver: bridge
+
+volumes:
+  transaction-db-data:
