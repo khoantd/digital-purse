@@ -22,7 +22,8 @@
 | Org roles | `OWNER`, `ADMIN`, `ACCOUNTANT`, `APPROVER` (separate from platform `ROLE_*`) |
 | Members | Owner/admin can add, change role, or remove members by username |
 | Settings | `/settings` — org profile, team members, editable spending controls (OWNER/ADMIN), subscription usage |
-| Isolation | Wallets, limits, idempotency, and spend requests are org-scoped |
+| Isolation | Wallets, limits, idempotency, spend requests, and activity logs are org-scoped |
+| Activity log | Append-only security/admin events; OWNER/ADMIN via `/activity` and `GET /activity-logs` |
 | Dashboard stats | `GET /organizations/{id}/stats` — ledger totals (transfer / withdraw / receive), pending approvals, today outbound/top-up |
 | Customers | Org-scoped payee/contact directory; optional link to an in-system wallet IBAN (SPEC: [`SPEC-customer-data.md`](SPEC-customer-data.md)) |
 | Wallet owner type | Wallets labeled `ORGANIZATION` or `CUSTOMER` (+ customer) at create; tenancy stays org-scoped |
@@ -86,6 +87,7 @@
 | Organizations | Header org switcher sends `X-Organization-Id` |
 | Customers | Payee contacts CRUD + wallet link (`/customers`); directory stats (Active / Archived / Linked / Unlinked); filters: search, status, linked wallet |
 | Approvals | Dual-control spend queue (`/approvals`); filters: status, operation, date range |
+| Activity | Security/admin audit log (`/activity`); OWNER/ADMIN only; auth, org/members/limits, customers, wallet CRUD, spend approve/reject, reverse |
 | Settings | Organization profile, members/roles, editable limits (`/settings` Controls), subscription usage (`/settings` Subscription) |
 | Access control | `PrivateRoute` + `ProtectedRoute` for `ROLE_USER` / `ROLE_ADMIN` |
 | UX | Material UI, Notistack toasts, Axios with auth + org headers |
@@ -111,6 +113,7 @@
 | Customers | `GET/POST /api/v1/customers` (`?q=&status=ACTIVE\|ARCHIVED\|ALL`), `GET/PUT /{id}`, `POST /{id}/archive`, `POST /{id}/link-wallet`, `POST /{id}/unlink-wallet` |
 | Wallets | `GET/POST /api/v1/wallets`, `GET/PUT/DELETE /{id}`, `GET /iban/{iban}`, `GET /users/{userId}`, `POST /transfer`, `/addFunds`, `/withdrawFunds` |
 | Spend requests | `GET /api/v1/spend-requests`, `POST /{id}/approve`, `POST /{id}/reject` |
+| Activity logs | `GET /api/v1/activity-logs` (`?eventType=&actorUserId=&from=&to=`) — OWNER/ADMIN |
 | Transactions | `GET /api/v1/transactions`, `GET /{id}`, `GET /references/{referenceNumber}`, `GET /users/{userId}`, `POST /{id}/reverse` |
 
 OpenAPI / Swagger UI is available via springdoc when the backend is running.

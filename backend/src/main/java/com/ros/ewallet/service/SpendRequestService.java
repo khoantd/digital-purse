@@ -4,6 +4,7 @@ import com.ros.ewallet.config.MessageSourceConfig;
 import com.ros.ewallet.domain.entity.SpendRequest;
 import com.ros.ewallet.domain.entity.Transaction;
 import com.ros.ewallet.domain.entity.User;
+import com.ros.ewallet.domain.enums.ActivityEventType;
 import com.ros.ewallet.domain.enums.OrganizationRole;
 import com.ros.ewallet.domain.enums.SpendRequestStatus;
 import com.ros.ewallet.dto.request.TransactionRequest;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import static com.ros.ewallet.common.MessageKeys.*;
 import static com.ros.ewallet.service.IdempotencyService.OP_REVERSE;
@@ -39,6 +41,7 @@ public class SpendRequestService {
     private final MessageSourceConfig messageConfig;
     private final WalletService walletService;
     private final TransactionReverseService transactionReverseService;
+    private final ActivityLogService activityLogService;
 
     public SpendRequestService(
             SpendRequestRepository spendRequestRepository,
@@ -47,7 +50,8 @@ public class SpendRequestService {
             SecurityAccess securityAccess,
             MessageSourceConfig messageConfig,
             @Lazy WalletService walletService,
-            @Lazy TransactionReverseService transactionReverseService) {
+            @Lazy TransactionReverseService transactionReverseService,
+            ActivityLogService activityLogService) {
         this.spendRequestRepository = spendRequestRepository;
         this.organizationRepository = organizationRepository;
         this.userRepository = userRepository;
@@ -55,6 +59,7 @@ public class SpendRequestService {
         this.messageConfig = messageConfig;
         this.walletService = walletService;
         this.transactionReverseService = transactionReverseService;
+        this.activityLogService = activityLogService;
     }
 
     @Transactional
@@ -71,6 +76,12 @@ public class SpendRequestService {
         spend.setCreatedAt(Instant.now());
         spendRequestRepository.save(spend);
         log.info(messageConfig.getMessage(INFO_SPEND_CREATED, spend.getId()));
+        activityLogService.record(
+                organizationId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.SPEND_REQUEST_CREATE,
+                "Spend request created",
+                Map.of("spendRequestId", spend.getId(), "operation", operation));
         return CommandResponse.pendingApproval(spend.getId());
     }
 
@@ -89,6 +100,15 @@ public class SpendRequestService {
         spend.setCreatedAt(Instant.now());
         spendRequestRepository.save(spend);
         log.info(messageConfig.getMessage(INFO_SPEND_CREATED, spend.getId()));
+        activityLogService.record(
+                organizationId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.SPEND_REQUEST_CREATE,
+                "Reverse spend request created",
+                Map.of(
+                        "spendRequestId", spend.getId(),
+                        "operation", OP_REVERSE,
+                        "sourceTransactionId", original.getId()));
         return CommandResponse.pendingApproval(spend.getId());
     }
 
@@ -146,6 +166,12 @@ public class SpendRequestService {
         spend.setResolvedAt(Instant.now());
         spendRequestRepository.save(spend);
         log.info(messageConfig.getMessage(INFO_SPEND_APPROVED, spend.getId()));
+        activityLogService.record(
+                orgId,
+                currentUserId,
+                ActivityEventType.SPEND_APPROVE,
+                "Spend request approved",
+                Map.of("spendRequestId", spend.getId(), "operation", spend.getOperation()));
         return CommandResponse.completed(executed.id());
     }
 
@@ -169,6 +195,12 @@ public class SpendRequestService {
         spend.setResolvedAt(Instant.now());
         spendRequestRepository.save(spend);
         log.info(messageConfig.getMessage(INFO_SPEND_REJECTED, spend.getId()));
+        activityLogService.record(
+                spend.getOrganization().getId(),
+                currentUserId,
+                ActivityEventType.SPEND_REJECT,
+                "Spend request rejected",
+                Map.of("spendRequestId", spend.getId(), "operation", spend.getOperation()));
         return CommandResponse.completed(spend.getId());
     }
 

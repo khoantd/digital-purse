@@ -63,6 +63,8 @@ class OrganizationServiceTest {
     private SubscriptionProperties subscriptionProperties;
     @Mock
     private TransactionQuotaService transactionQuotaService;
+    @Mock
+    private ActivityLogService activityLogService;
 
     private OrganizationService service;
 
@@ -78,9 +80,11 @@ class OrganizationServiceTest {
                 messageConfig,
                 limitProperties,
                 subscriptionProperties,
-                transactionQuotaService);
+                transactionQuotaService,
+                activityLogService);
         lenient().when(messageConfig.getMessage(anyString())).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(messageConfig.getMessage(anyString(), any())).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(securityAccess.currentUser()).thenReturn(userDetails(1L));
     }
 
     @Test

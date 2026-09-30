@@ -56,9 +56,10 @@ class CustomerServiceTest {
     void setUp() {
         service = new CustomerService(
                 customerRepository, organizationRepository, userRepository,
-                walletRepository, securityAccess, messageConfig);
+                walletRepository, securityAccess, messageConfig, mock(ActivityLogService.class));
         lenient().when(messageConfig.getMessage(anyString())).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(messageConfig.getMessage(anyString(), any())).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(securityAccess.currentUser()).thenReturn(userDetails(1L));
     }
 
     @Test

@@ -2,7 +2,15 @@
 
 > Actionable checklist for the current feature or sprint. Sync with `.agent/SESSION.md` on `/handoff`.
 
-## Current sprint — Approvals queue stats
+## Current sprint — User activity log
+
+- [x] Flyway V16 `activity_log` + ActivityLogService / GET `/activity-logs`
+- [x] Instrument auth, org, customer, wallet CRUD, spend, reverse
+- [x] ActivityLogServiceTest + existing service tests green
+- [x] Frontend `/activity` (OWNER/ADMIN) + nav gate
+- [x] Docs (features) / SESSION
+
+## Done (prior — Approvals queue stats)
 
 - [x] `/approvals` OpsStatCards (Pending / Approved / Rejected / Awaiting)
 - [x] Click-to-filter Status + actingId on Approve/Reject
@@ -101,3 +109,4 @@
 - [ ] Money request / pay-by-username
 - [ ] VietQR / NAPAS sandbox adapter (Receive UI hidden; route kept)
 - [ ] Prod cookieSecure + CORS origins
+- [ ] Activity log CSV export / retention job

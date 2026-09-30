@@ -408,8 +408,8 @@ export default function Approvals() {
           ) : (
             <>
               <Scrollbar>
-                <TableContainer sx={{ minWidth: 800 }}>
-                  <Table>
+                <TableContainer sx={{ overflowX: 'auto' }}>
+                  <Table sx={{ minWidth: 800 }}>
                     <TableHead>
                       <TableRow>
                         <TableCell>Operation</TableCell>

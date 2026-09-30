@@ -6,6 +6,7 @@ import com.ros.ewallet.config.TransactionLimitProperties;
 import com.ros.ewallet.domain.entity.Organization;
 import com.ros.ewallet.domain.entity.OrganizationMembership;
 import com.ros.ewallet.domain.entity.User;
+import com.ros.ewallet.domain.enums.ActivityEventType;
 import com.ros.ewallet.domain.enums.OrganizationRole;
 import com.ros.ewallet.domain.enums.OrganizationStatus;
 import com.ros.ewallet.dto.mapper.WalletResponseMapper;
@@ -35,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import static com.ros.ewallet.common.MessageKeys.*;
 
@@ -55,6 +57,7 @@ public class OrganizationService {
     private final TransactionLimitProperties limitProperties;
     private final SubscriptionProperties subscriptionProperties;
     private final TransactionQuotaService transactionQuotaService;
+    private final ActivityLogService activityLogService;
 
     @Transactional
     public Organization createDefaultForUser(User user) {
@@ -112,6 +115,12 @@ public class OrganizationService {
         membershipRepository.save(membership);
 
         log.info(messageConfig.getMessage(INFO_ORG_CREATED, org.getId()));
+        activityLogService.record(
+                org.getId(),
+                user.getId(),
+                ActivityEventType.ORG_CREATE,
+                "Organization created",
+                Map.of("organizationId", org.getId()));
         return CommandResponse.completed(org.getId());
     }
 
@@ -127,6 +136,12 @@ public class OrganizationService {
         organizationRepository.save(org);
 
         log.info(messageConfig.getMessage(INFO_ORG_UPDATED, org.getId()));
+        activityLogService.record(
+                organizationId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.ORG_UPDATE,
+                "Organization profile updated",
+                Map.of("organizationId", organizationId));
         return CommandResponse.completed(org.getId());
     }
 
@@ -163,6 +178,15 @@ public class OrganizationService {
         membershipRepository.save(membership);
 
         log.info(messageConfig.getMessage(INFO_MEMBER_ADDED, membership.getId()));
+        activityLogService.record(
+                organizationId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.ORG_MEMBER_ADD,
+                "Member added",
+                Map.of(
+                        "membershipId", membership.getId(),
+                        "memberUserId", user.getId(),
+                        "role", membership.getRole().name()));
         return CommandResponse.completed(membership.getId());
     }
 
@@ -183,6 +207,15 @@ public class OrganizationService {
         membershipRepository.save(membership);
 
         log.info(messageConfig.getMessage(INFO_MEMBER_UPDATED, membership.getId()));
+        activityLogService.record(
+                organizationId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.ORG_MEMBER_ROLE_UPDATE,
+                "Member role updated",
+                Map.of(
+                        "membershipId", membershipId,
+                        "memberUserId", membership.getUser().getId(),
+                        "role", newRole.name()));
         return CommandResponse.completed(membership.getId());
     }
 
@@ -197,8 +230,15 @@ public class OrganizationService {
             ensureNotLastOwner(organizationId);
         }
 
+        Long memberUserId = membership.getUser().getId();
         membershipRepository.delete(membership);
         log.info(messageConfig.getMessage(INFO_MEMBER_REMOVED, membershipId));
+        activityLogService.record(
+                organizationId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.ORG_MEMBER_REMOVE,
+                "Member removed",
+                Map.of("membershipId", membershipId, "memberUserId", memberUserId));
         return CommandResponse.completed(membershipId);
     }
 
@@ -230,6 +270,12 @@ public class OrganizationService {
         organizationRepository.save(org);
 
         log.info(messageConfig.getMessage(INFO_ORG_LIMITS_UPDATED, org.getId()));
+        activityLogService.record(
+                organizationId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.ORG_LIMITS_UPDATE,
+                "Organization spending limits updated",
+                Map.of("organizationId", organizationId));
         return CommandResponse.completed(org.getId());
     }
 

@@ -5,6 +5,7 @@ import com.ros.ewallet.config.MessageSourceConfig;
 import com.ros.ewallet.config.TransactionLimitProperties;
 import com.ros.ewallet.domain.entity.Transaction;
 import com.ros.ewallet.domain.entity.Wallet;
+import com.ros.ewallet.domain.enums.ActivityEventType;
 import com.ros.ewallet.domain.enums.OrganizationRole;
 import com.ros.ewallet.domain.enums.Status;
 import com.ros.ewallet.dto.request.TransactionRequest;
@@ -26,6 +27,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -59,6 +61,7 @@ public class TransactionReverseService {
     private final MessageSourceConfig messageConfig;
     private final TransactionLimitProperties limitProperties;
     private final Clock clock;
+    private final ActivityLogService activityLogService;
 
     public TransactionReverseService(
             TransactionRepository transactionRepository,
@@ -74,7 +77,8 @@ public class TransactionReverseService {
             SecurityAccess securityAccess,
             MessageSourceConfig messageConfig,
             TransactionLimitProperties limitProperties,
-            Clock clock) {
+            Clock clock,
+            ActivityLogService activityLogService) {
         this.transactionRepository = transactionRepository;
         this.walletRepository = walletRepository;
         this.transactionService = transactionService;
@@ -89,6 +93,7 @@ public class TransactionReverseService {
         this.messageConfig = messageConfig;
         this.limitProperties = limitProperties;
         this.clock = clock;
+        this.activityLogService = activityLogService;
     }
 
     @Transactional
@@ -157,6 +162,14 @@ public class TransactionReverseService {
                 reverseTx, originalTypeId, fromWallet, toWallet, amount, currencyOf(fromWallet));
 
         idempotencyService.remember(orgId, userId, OP_REVERSE, idempotencyKey, reverseTx.getId());
+        activityLogService.record(
+                orgId,
+                userId,
+                ActivityEventType.TX_REVERSE,
+                "Transaction reversed",
+                Map.of(
+                        "reverseTransactionId", reverseTx.getId(),
+                        "sourceTransactionId", original.getId()));
         return CommandResponse.completed(reverseTx.getId());
     }
 

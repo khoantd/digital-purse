@@ -106,6 +106,37 @@ org role: APPROVER
 <br/>
 
 
+### Build images only
+
+To build backend and frontend Docker images without starting containers:
+
+```shell
+./scripts/build-images.sh
+```
+
+Optional:
+
+```shell
+TAG=v1.0.0 ./scripts/build-images.sh
+./scripts/build-images.sh --tag v1.0.0
+./scripts/build-images.sh --no-cache
+./scripts/build-images.sh --platform linux/amd64
+./scripts/build-images.sh --registry ghcr.io/myorg --tag v1.0.0 --push
+PLATFORM=linux/amd64,linux/arm64 REGISTRY=ghcr.io/myorg ./scripts/build-images.sh --push
+```
+
+- `--platform` — target OS/arch (multi-arch comma lists require `--push` + `--registry`)
+- `--registry` — prefix images as `<registry>/e-wallet-backend:<tag>`
+- `--push` — push to the registry (requires `--registry`; log in first, e.g. `docker login ghcr.io`)
+
+Local images are tagged `e-wallet-backend` and `e-wallet-frontend`. To start containers afterward:
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+<br/>
+
 ### Running app in Production mode
 
 In order to run the application in production mode, apply the following steps:

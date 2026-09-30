@@ -11,6 +11,7 @@ import NewWallet from './pages/wallet/NewWallet';
 import ReceiveFunds from './pages/wallet/ReceiveFunds';
 import Wallet from './pages/wallet/Wallet';
 import Approvals from './pages/approvals/Approvals';
+import Activity from './pages/activity/Activity';
 import Customers from './pages/customers/Customers';
 import Settings from './pages/settings/Settings';
 import PrivateRoute from './PrivateRoute';
@@ -80,6 +81,12 @@ export default function App() {
           <Route path="approvals" element={<PrivateRoute />}>
             <Route element={<ProtectedRoute roles={['ROLE_USER', 'ROLE_ADMIN']} />}>
               <Route index element={<Approvals />} />
+            </Route>
+          </Route>
+
+          <Route path="activity" element={<PrivateRoute />}>
+            <Route element={<ProtectedRoute roles={['ROLE_USER', 'ROLE_ADMIN']} />}>
+              <Route index element={<Activity />} />
             </Route>
           </Route>
 

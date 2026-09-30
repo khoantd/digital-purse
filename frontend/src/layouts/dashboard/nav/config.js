@@ -34,6 +34,12 @@ const navConfig = [
     icon: icon('ic_lock'),
   },
   {
+    title: 'activity',
+    path: '/activity',
+    icon: icon('ic_blog'),
+    roles: ['OWNER', 'ADMIN'],
+  },
+  {
     title: 'settings',
     path: '/settings',
     icon: icon('ic_settings'),

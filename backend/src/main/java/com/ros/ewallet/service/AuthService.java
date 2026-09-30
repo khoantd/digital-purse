@@ -1,7 +1,9 @@
 package com.ros.ewallet.service;
 
 import com.ros.ewallet.config.MessageSourceConfig;
+import com.ros.ewallet.domain.entity.Organization;
 import com.ros.ewallet.domain.entity.User;
+import com.ros.ewallet.domain.enums.ActivityEventType;
 import com.ros.ewallet.dto.mapper.SignupRequestMapper;
 import com.ros.ewallet.dto.request.LoginRequest;
 import com.ros.ewallet.dto.request.SignupRequest;
@@ -10,6 +12,7 @@ import com.ros.ewallet.dto.response.JwtResponse;
 import com.ros.ewallet.exception.ElementAlreadyExistsException;
 import com.ros.ewallet.repository.UserRepository;
 import com.ros.ewallet.security.JwtUtils;
+import com.ros.ewallet.security.SecurityAccess;
 import com.ros.ewallet.security.UserDetailsImpl;
 import com.ros.ewallet.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.ros.ewallet.common.MessageKeys.*;
 
@@ -40,6 +44,8 @@ public class AuthService {
     private final SignupRequestMapper signupRequestMapper;
     private final UserDetailsServiceImpl userDetailsService;
     private final OrganizationService organizationService;
+    private final ActivityLogService activityLogService;
+    private final SecurityAccess securityAccess;
 
     /**
      * Authenticates users by their credentials.
@@ -48,6 +54,10 @@ public class AuthService {
      * @return JwtResponse (access token in body; refresh token set as cookie by controller)
      */
     public AuthTokens login(LoginRequest request) {
+        return login(request, null);
+    }
+
+    public AuthTokens login(LoginRequest request, String ipAddress) {
         final Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername().trim(), request.getPassword()));
 
@@ -61,6 +71,13 @@ public class AuthService {
                 .toList();
 
         log.info(messageConfig.getMessage(INFO_USER_LOGIN, userDetails.getId()));
+        activityLogService.record(
+                null,
+                userDetails.getId(),
+                ActivityEventType.AUTH_LOGIN,
+                "User logged in",
+                Map.of("userId", userDetails.getId()),
+                ipAddress);
         JwtResponse jwtResponse = JwtResponse
                 .builder()
                 .type("Bearer")
@@ -114,11 +131,30 @@ public class AuthService {
      * Revokes access and/or refresh tokens (logout).
      */
     public void logout(String accessToken, String refreshToken) {
+        logout(accessToken, refreshToken, null);
+    }
+
+    public void logout(String accessToken, String refreshToken, String ipAddress) {
+        Long actorId = null;
+        try {
+            actorId = securityAccess.currentUser().getId();
+        } catch (Exception ignored) {
+            // logout may run without a valid principal
+        }
         if (accessToken != null && !accessToken.isBlank()) {
             jwtUtils.revokeToken(accessToken);
         }
         if (refreshToken != null && !refreshToken.isBlank()) {
             jwtUtils.revokeToken(refreshToken);
+        }
+        if (actorId != null) {
+            activityLogService.record(
+                    null,
+                    actorId,
+                    ActivityEventType.AUTH_LOGOUT,
+                    "User logged out",
+                    Map.of("userId", actorId),
+                    ipAddress);
         }
         SecurityContextHolder.clearContext();
     }
@@ -131,6 +167,10 @@ public class AuthService {
      * @return id of the registered user
      */
     public CommandResponse signup(SignupRequest request) {
+        return signup(request, null);
+    }
+
+    public CommandResponse signup(SignupRequest request, String ipAddress) {
         final boolean usernameExists = userRepository.existsByUsernameIgnoreCase(request.getUsername().trim());
         final boolean emailExists = userRepository.existsByEmailIgnoreCase(request.getEmail().trim());
         if (usernameExists || emailExists) {
@@ -139,8 +179,15 @@ public class AuthService {
 
         final User user = signupRequestMapper.toUser(request);
         userRepository.save(user);
-        organizationService.createDefaultForUser(user);
+        Organization org = organizationService.createDefaultForUser(user);
         log.info(messageConfig.getMessage(INFO_USER_CREATED, user.getId()));
+        activityLogService.record(
+                org.getId(),
+                user.getId(),
+                ActivityEventType.AUTH_SIGNUP,
+                "User signed up",
+                Map.of("userId", user.getId(), "organizationId", org.getId()),
+                ipAddress);
         return CommandResponse.completed(user.getId());
     }
 

@@ -70,6 +70,7 @@ SME multi-tenant Digital Purse foundation delivered (Organization tenancy + dual
 - **List pagination (2026-09-30):** Client-side `TablePagination` on `/wallets` (per section), `/customers`, `/approvals`; `/transactions` footer aligned
 - **Customers & Approvals filters (2026-09-30):** `/customers` Search + Status + Linked + Clear; `GET /customers?status=`; `/approvals` Status + Operation + date range + Clear; empty-match states; CustomerServiceTest (11)
 - **Customers directory stats (2026-09-30):** `/customers` OpsStatCards (Active / Archived / Linked / Unlinked); client-side status filter after `status=ALL` load
+- **User activity log (2026-09-30):** Flyway V16 + `/activity` OWNER/ADMIN audit trail for security/admin events
 
 ## In progress
 
@@ -80,11 +81,14 @@ SME multi-tenant Digital Purse foundation delivered (Organization tenancy + dual
 1. Optional: email invite tokens / pending invitations
 2. Optional: self-serve / paid subscription upgrade UI
 3. Optional: 2FA, money request, VietQR sandbox (Receive UI hidden; `/wallets/receive` kept), prod cookie/CORS
-4. After pull: run Flyway `V8`–`V15` (owner type + transaction types + org limits + transaction quota + reverse)
+4. After pull: run Flyway `V8`–`V16` (owner type + transaction types + org limits + transaction quota + reverse + activity log)
 5. Optional: relax `WalletRequest` so update does not require `@Positive` balance (rename currently sends placeholder when balance is 0)
+6. Optional: activity log CSV export / retention
 
 ## Done (recent)
 
+- **Docker image build script (2026-10-01):** `./scripts/build-images.sh` builds backend+frontend via compose (no up); supports `--tag` / `TAG=` / `--platform` / `--registry` / `--push` / `--no-cache`; documented in `how_to_run.md`
+- **User activity log (2026-09-30):** Flyway `V16` append-only `activity_log`; `ActivityLogService` (REQUIRES_NEW, never fails caller); `GET /api/v1/activity-logs` OWNER/ADMIN; instruments auth, org/members/limits, customers, wallet CRUD, spend create/approve/reject, reverse. Frontend `/activity` with filters + details dialog; nav visible to OWNER/ADMIN (+ platform admin). ActivityLogServiceTest 5 + related suites green (72). Money transfer/top-up/withdraw not logged (remain on `/transactions`).
 - **Customers directory stats (2026-09-30):** `/customers` OpsStatCards — Active / Archived / Linked / Unlinked; load `status=ALL` + client status/linked filters; click toggles; sr-only active count live status.
 - **Approvals queue stats (2026-09-30):** `/approvals` OpsStatCards — Pending / Approved / Rejected (counts) + Awaiting (pending VND); scoped by operation+date; click toggles Status filter; actingId on Approve/Reject; sr-only pending live status.
 - **Customers & Approvals filters (2026-09-30):** Card toolbars aligned with Transactions. Customers: labeled Search (Enter/Search), Status (ACTIVE/ARCHIVED/ALL, default ACTIVE), Linked (client-side), Clear; backend `?status=`; empty vs no-match. Approvals: Status, Operation, From/To, Clear; client-side; empty vs no-match. Spec/features updated; CustomerServiceTest 11 green.
@@ -121,7 +125,8 @@ SME multi-tenant Digital Purse foundation delivered (Organization tenancy + dual
 - Customer manage = OWNER/ADMIN/ACCOUNTANT; APPROVER read-only
 - **Wallet owner type** = classification label (`ORGANIZATION` / `CUSTOMER` + customerId); does not change tenancy or create customer-owned wallets; link-wallet remains separate
 - **Settings** = org profile + members + editable Controls + subscription usage (OWNER/ADMIN); other roles read-only
-- Frontend UX: org switcher + existing MUI Minimal patterns; Settings layout from Mobbin team-settings patterns
+- **Activity log** = append-only security/admin events (not money transfer/top-up/withdraw); OWNER/ADMIN (+ platform admin); AUTH events listed when actor is org member
+- Frontend UX: org switcher + existing MUI Minimal patterns; Settings layout from Mobbin team-settings patterns; Activity from Mobbin audit-log table patterns
 - Dev: Docker Compose runs Postgres only; backend/frontend run locally
 - SEC-04: history rewrite done; collaborators must re-clone
 
@@ -129,12 +134,13 @@ SME multi-tenant Digital Purse foundation delivered (Organization tenancy + dual
 
 - Open `backend/` as the IDE project root for Spring Boot (not monorepo root)
 - Env vars in root `.env.properties`; copy from `.env.example`
-- Flyway `V6`–`V15` must run before app start after pull
+- Flyway `V6`–`V16` must run before app start after pull
 - Mockito needs agent attach (full JVM permissions for tests)
 - List GETs return **404** when empty — frontend maps via `getListWithAuth`
 - Non-admin wallet list requires **`X-Organization-Id`** — bootstrap via `frontend/src/services/ensureOrganization.js` before dashboard loads
 - Local auth cookies: `cookieSecure=false`; enable Secure in prod
 - Demo users (org **Sao Viet Trading**): `smeowner` / `smeaccountant` / `smeapprover` — password `DemoPassword1!` — org roles OWNER / ACCOUNTANT / APPROVER
+- Activity nav/page: OWNER/ADMIN only (`smeaccountant` / `smeapprover` redirected away)
 
 ## Pointers
 
@@ -164,6 +170,8 @@ SME multi-tenant Digital Purse foundation delivered (Organization tenancy + dual
 | Migration V13 | `backend/.../db/migration/V13__organization_limits.sql` |
 | Migration V14 | `backend/.../db/migration/V14__organization_transaction_quota.sql` |
 | Migration V15 | `backend/.../db/migration/V15__transaction_reverse.sql` |
+| Migration V16 | `backend/.../db/migration/V16__activity_log.sql` |
+| Activity log | `ActivityLogService`, `GET /api/v1/activity-logs`, `frontend/.../pages/activity/Activity.js` |
 | Transaction reverse | `TransactionReverseService`, `POST /transactions/{id}/reverse` |
 | Transaction filters | `frontend/src/pages/transaction/Transaction.js` |
 | Receive UI | `frontend/src/pages/wallet/ReceiveFunds.js` |

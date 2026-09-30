@@ -5,6 +5,7 @@ import com.ros.ewallet.domain.entity.Customer;
 import com.ros.ewallet.domain.entity.Organization;
 import com.ros.ewallet.domain.entity.Transaction;
 import com.ros.ewallet.domain.entity.Wallet;
+import com.ros.ewallet.domain.enums.ActivityEventType;
 import com.ros.ewallet.domain.enums.CustomerStatus;
 import com.ros.ewallet.domain.enums.OrganizationRole;
 import com.ros.ewallet.domain.enums.Status;
@@ -32,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.ros.ewallet.common.Constants.CURRENCY_VND;
@@ -64,6 +66,7 @@ public class WalletService {
     private final TransactionQuotaService transactionQuotaService;
     private final OrganizationService organizationService;
     private final SpendRequestService spendRequestService;
+    private final ActivityLogService activityLogService;
 
     private static final int IBAN_GENERATE_MAX_ATTEMPTS = 10;
 
@@ -83,7 +86,8 @@ public class WalletService {
             TransactionLimitService transactionLimitService,
             TransactionQuotaService transactionQuotaService,
             OrganizationService organizationService,
-            @Lazy SpendRequestService spendRequestService) {
+            @Lazy SpendRequestService spendRequestService,
+            ActivityLogService activityLogService) {
         this.messageConfig = messageConfig;
         this.walletRepository = walletRepository;
         this.customerRepository = customerRepository;
@@ -100,6 +104,7 @@ public class WalletService {
         this.transactionQuotaService = transactionQuotaService;
         this.organizationService = organizationService;
         this.spendRequestService = spendRequestService;
+        this.activityLogService = activityLogService;
     }
 
     @Transactional(readOnly = true)
@@ -171,6 +176,12 @@ public class WalletService {
         wallet.setCustomer(customer);
         walletRepository.save(wallet);
         log.info(messageConfig.getMessage(INFO_WALLET_CREATED, wallet.getId()));
+        activityLogService.record(
+                orgId,
+                creatorId,
+                ActivityEventType.WALLET_CREATE,
+                "Wallet created",
+                Map.of("walletId", wallet.getId(), "ownerType", request.getOwnerType().name()));
 
         TransactionRequest initialTx = walletTransactionRequestMapper.toTransactionRequest(request);
         Transaction transaction = transactionService.createEntity(initialTx);
@@ -392,6 +403,12 @@ public class WalletService {
         foundWallet.setName(org.apache.commons.text.WordUtils.capitalizeFully(request.getName()));
         walletRepository.save(foundWallet);
         log.info(messageConfig.getMessage(INFO_WALLET_UPDATED, foundWallet.getId()));
+        activityLogService.record(
+                orgId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.WALLET_UPDATE,
+                "Wallet renamed",
+                Map.of("walletId", foundWallet.getId()));
         return CommandResponse.completed(id);
     }
 
@@ -405,8 +422,15 @@ public class WalletService {
         final Wallet wallet = walletRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
         securityAccess.requireWalletOrgRole(wallet, OrganizationRole.OWNER, OrganizationRole.ADMIN);
+        Long orgId = wallet.getOrganization().getId();
         walletRepository.delete(wallet);
         log.info(messageConfig.getMessage(INFO_WALLET_DELETED, wallet.getId()));
+        activityLogService.record(
+                orgId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.WALLET_DELETE,
+                "Wallet deleted",
+                Map.of("walletId", id));
     }
 
     private static String currencyOf(Wallet wallet) {

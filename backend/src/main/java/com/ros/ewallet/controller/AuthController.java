@@ -48,7 +48,7 @@ public class AuthController {
     public ResponseEntity<JwtResponse> login(@Valid @RequestBody LoginRequest request,
                                              HttpServletRequest httpRequest) {
         consumeRateLimit(httpRequest, "login", AuthRateLimiter.LOGIN_CAPACITY);
-        final AuthService.AuthTokens tokens = authService.login(request);
+        final AuthService.AuthTokens tokens = authService.login(request, clientIp(httpRequest));
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshCookie(tokens.refreshToken(), refreshExpirationMs / 1000).toString())
                 .body(tokens.jwtResponse());
@@ -64,7 +64,7 @@ public class AuthController {
     public ResponseEntity<CommandResponse> signup(@Valid @RequestBody SignupRequest request,
                                                   HttpServletRequest httpRequest) {
         consumeRateLimit(httpRequest, "signup", AuthRateLimiter.LOGIN_CAPACITY);
-        final CommandResponse response = authService.signup(request);
+        final CommandResponse response = authService.signup(request, clientIp(httpRequest));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -89,7 +89,7 @@ public class AuthController {
     public ResponseEntity<Void> logout(
             HttpServletRequest httpRequest,
             @CookieValue(value = REFRESH_COOKIE_NAME, required = false) String refreshToken) {
-        authService.logout(parseBearer(httpRequest), refreshToken);
+        authService.logout(parseBearer(httpRequest), refreshToken, clientIp(httpRequest));
         return ResponseEntity.noContent()
                 .header(HttpHeaders.SET_COOKIE, refreshCookie("", 0).toString())
                 .build();

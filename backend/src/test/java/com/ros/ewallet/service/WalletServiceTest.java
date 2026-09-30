@@ -101,6 +101,9 @@ class WalletServiceTest {
     @Mock
     private SpendRequestService spendRequestService;
 
+    @Mock
+    private ActivityLogService activityLogService;
+
     @Test
     void findById_shouldReturnWalletResponse() {
         var wallet = createTestWallet(1L, 1L, "TEST123", "Test Wallet", BigDecimal.valueOf(1000));

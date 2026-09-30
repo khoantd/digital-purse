@@ -49,7 +49,8 @@ class SpendRequestServiceTest {
     void approve_rejectsSelfApproval() {
         SpendRequestService service = new SpendRequestService(
                 spendRequestRepository, organizationRepository, userRepository,
-                securityAccess, messageConfig, walletService, mock(TransactionReverseService.class));
+                securityAccess, messageConfig, walletService, mock(TransactionReverseService.class),
+                mock(ActivityLogService.class));
 
         Organization org = new Organization();
         org.setId(10L);
@@ -77,7 +78,8 @@ class SpendRequestServiceTest {
     void createPending_persistsPendingRequest() {
         SpendRequestService service = new SpendRequestService(
                 spendRequestRepository, organizationRepository, userRepository,
-                securityAccess, messageConfig, walletService, mock(TransactionReverseService.class));
+                securityAccess, messageConfig, walletService, mock(TransactionReverseService.class),
+                mock(ActivityLogService.class));
 
         Organization org = new Organization();
         org.setId(10L);

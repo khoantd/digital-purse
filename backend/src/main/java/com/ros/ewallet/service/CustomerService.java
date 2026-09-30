@@ -5,6 +5,7 @@ import com.ros.ewallet.domain.entity.Customer;
 import com.ros.ewallet.domain.entity.Organization;
 import com.ros.ewallet.domain.entity.User;
 import com.ros.ewallet.domain.entity.Wallet;
+import com.ros.ewallet.domain.enums.ActivityEventType;
 import com.ros.ewallet.domain.enums.CustomerStatus;
 import com.ros.ewallet.domain.enums.OrganizationRole;
 import com.ros.ewallet.dto.request.CustomerRequest;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import static com.ros.ewallet.common.MessageKeys.*;
 
@@ -39,6 +41,7 @@ public class CustomerService {
     private final WalletRepository walletRepository;
     private final SecurityAccess securityAccess;
     private final MessageSourceConfig messageConfig;
+    private final ActivityLogService activityLogService;
 
     @Transactional(readOnly = true)
     public List<CustomerResponse> list(String query) {
@@ -110,12 +113,18 @@ public class CustomerService {
         customerRepository.save(customer);
 
         log.info(messageConfig.getMessage(INFO_CUSTOMER_CREATED, customer.getId()));
+        activityLogService.record(
+                orgId,
+                creator.getId(),
+                ActivityEventType.CUSTOMER_CREATE,
+                "Customer created",
+                Map.of("customerId", customer.getId()));
         return CommandResponse.completed(customer.getId());
     }
 
     @Transactional
     public CommandResponse update(long id, CustomerRequest request) {
-        requireManageAccess();
+        Long orgId = requireManageAccess();
         Customer customer = requireCustomerInActiveOrg(id);
         customer.setName(request.getName().trim());
         customer.setPhone(blankToNull(request.getPhone()));
@@ -126,12 +135,18 @@ public class CustomerService {
         customerRepository.save(customer);
 
         log.info(messageConfig.getMessage(INFO_CUSTOMER_UPDATED, customer.getId()));
+        activityLogService.record(
+                orgId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.CUSTOMER_UPDATE,
+                "Customer updated",
+                Map.of("customerId", customer.getId()));
         return CommandResponse.completed(customer.getId());
     }
 
     @Transactional
     public CommandResponse archive(long id) {
-        requireManageAccess();
+        Long orgId = requireManageAccess();
         Customer customer = requireCustomerInActiveOrg(id);
         customer.setStatus(CustomerStatus.ARCHIVED);
         customer.setLinkedWallet(null);
@@ -139,6 +154,12 @@ public class CustomerService {
         customerRepository.save(customer);
 
         log.info(messageConfig.getMessage(INFO_CUSTOMER_ARCHIVED, customer.getId()));
+        activityLogService.record(
+                orgId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.CUSTOMER_ARCHIVE,
+                "Customer archived",
+                Map.of("customerId", customer.getId()));
         return CommandResponse.completed(customer.getId());
     }
 
@@ -160,18 +181,30 @@ public class CustomerService {
         customerRepository.save(customer);
 
         log.info(messageConfig.getMessage(INFO_CUSTOMER_LINKED, customer.getId()));
+        activityLogService.record(
+                orgId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.CUSTOMER_LINK_WALLET,
+                "Customer linked to wallet",
+                Map.of("customerId", customer.getId(), "walletId", wallet.getId()));
         return CommandResponse.completed(customer.getId());
     }
 
     @Transactional
     public CommandResponse unlinkWallet(long id) {
-        requireManageAccess();
+        Long orgId = requireManageAccess();
         Customer customer = requireCustomerInActiveOrg(id);
         customer.setLinkedWallet(null);
         customer.setUpdatedAt(Instant.now());
         customerRepository.save(customer);
 
         log.info(messageConfig.getMessage(INFO_CUSTOMER_UNLINKED, customer.getId()));
+        activityLogService.record(
+                orgId,
+                securityAccess.currentUser().getId(),
+                ActivityEventType.CUSTOMER_UNLINK_WALLET,
+                "Customer unlinked from wallet",
+                Map.of("customerId", customer.getId()));
         return CommandResponse.completed(customer.getId());
     }
 

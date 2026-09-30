@@ -78,7 +78,8 @@ class TransactionReverseServiceTest {
                 securityAccess,
                 messageConfig,
                 limitProperties,
-                clock);
+                clock,
+                mock(ActivityLogService.class));
         lenient().when(securityAccess.requireActiveOrganizationIdForMutation()).thenReturn(10L);
         lenient().when(securityAccess.currentUser()).thenReturn(new UserDetailsImpl(
                 1L, "owner", "p", "A", "B", List.of(new SimpleGrantedAuthority("ROLE_USER"))));
