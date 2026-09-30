@@ -69,6 +69,7 @@ SME multi-tenant Digital Purse foundation delivered (Organization tenancy + dual
 - **Transaction reverse (2026-09-30):** Compensating reverse for SUCCESS Transfer / Top-up / Withdraw; Flyway `V15`; OWNER/ADMIN + 72h window + dual-control; Mock rail refunds; UI Reverse on `/transactions`
 - **List pagination (2026-09-30):** Client-side `TablePagination` on `/wallets` (per section), `/customers`, `/approvals`; `/transactions` footer aligned
 - **Customers & Approvals filters (2026-09-30):** `/customers` Search + Status + Linked + Clear; `GET /customers?status=`; `/approvals` Status + Operation + date range + Clear; empty-match states; CustomerServiceTest (11)
+- **Customers directory stats (2026-09-30):** `/customers` OpsStatCards (Active / Archived / Linked / Unlinked); client-side status filter after `status=ALL` load
 
 ## In progress
 
@@ -84,6 +85,8 @@ SME multi-tenant Digital Purse foundation delivered (Organization tenancy + dual
 
 ## Done (recent)
 
+- **Customers directory stats (2026-09-30):** `/customers` OpsStatCards — Active / Archived / Linked / Unlinked; load `status=ALL` + client status/linked filters; click toggles; sr-only active count live status.
+- **Approvals queue stats (2026-09-30):** `/approvals` OpsStatCards — Pending / Approved / Rejected (counts) + Awaiting (pending VND); scoped by operation+date; click toggles Status filter; actingId on Approve/Reject; sr-only pending live status.
 - **Customers & Approvals filters (2026-09-30):** Card toolbars aligned with Transactions. Customers: labeled Search (Enter/Search), Status (ACTIVE/ARCHIVED/ALL, default ACTIVE), Linked (client-side), Clear; backend `?status=`; empty vs no-match. Approvals: Status, Operation, From/To, Clear; client-side; empty vs no-match. Spec/features updated; CustomerServiceTest 11 green.
 - **List pagination (2026-09-30):** Client-side MUI `TablePagination` on `/wallets` (Organization + Customers' sections), `/customers`, `/approvals`; `/transactions` footer label + divider aligned. Defaults 5/10/25; page resets on reload/org/search.
 - **Transaction reverse (2026-09-30):** Flyway `V15` type Reverse + `reverses_transaction_id` + spend `source_transaction_id`; `TransactionReverseService`; `POST /transactions/{id}/reverse`; Mock `refundTopUp`/`refundWithdraw`; dual-control `OP_REVERSE`; Transactions Reverse action + Approvals label; tests green (Reverse 6 + Ledger 4 + MockRail 4 + related).

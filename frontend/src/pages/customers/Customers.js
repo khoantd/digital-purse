@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Card,
   Container,
@@ -28,7 +29,7 @@ import { useNavigate } from 'react-router-dom';
 import Iconify from '../../components/iconify';
 import Label from '../../components/label';
 import Scrollbar from '../../components/scrollbar';
-import { EmptyState } from '../../components/wallet-ui';
+import { EmptyState, OpsStatCard } from '../../components/wallet-ui';
 import HttpService from '../../services/HttpService';
 
 const emptyForm = {
@@ -58,6 +59,27 @@ const PAGINATION_SX = {
   '& .MuiTablePagination-actions button': { cursor: 'pointer' },
   '& .MuiInputBase-root': { cursor: 'pointer' },
 };
+
+const FOUR_COL_GRID_SX = {
+  display: 'grid',
+  gap: 2,
+  gridTemplateColumns: {
+    xs: '1fr',
+    sm: 'repeat(2, 1fr)',
+    md: 'repeat(4, 1fr)',
+  },
+};
+
+const ACTIVE_STAT_SX = {
+  boxShadow: (theme) => theme.customShadows.z8,
+  outline: (theme) => `2px solid ${theme.palette.primary.main}`,
+  outlineOffset: 1,
+};
+
+function matchesStatusFilter(row, statusFilter) {
+  if (!statusFilter || statusFilter === 'ALL') return true;
+  return (row.status || '').toUpperCase() === statusFilter;
+}
 
 function matchesLinkedFilter(row, linkedFilter) {
   if (!linkedFilter) return true;
@@ -92,15 +114,33 @@ export default function Customers() {
   );
 
   const filteredRows = useMemo(
-    () => rows.filter((row) => matchesLinkedFilter(row, linkedFilter)),
-    [rows, linkedFilter]
+    () =>
+      rows.filter(
+        (row) => matchesStatusFilter(row, statusFilter) && matchesLinkedFilter(row, linkedFilter)
+      ),
+    [rows, statusFilter, linkedFilter]
   );
 
-  const load = (q = appliedQuery, status = statusFilter) => {
+  const directoryStats = useMemo(() => {
+    let activeCount = 0;
+    let archivedCount = 0;
+    let linkedCount = 0;
+    let unlinkedCount = 0;
+    rows.forEach((row) => {
+      const status = (row.status || '').toUpperCase();
+      if (status === 'ACTIVE') activeCount += 1;
+      else if (status === 'ARCHIVED') archivedCount += 1;
+      if (row.linkedWalletIban) linkedCount += 1;
+      else unlinkedCount += 1;
+    });
+    return { activeCount, archivedCount, linkedCount, unlinkedCount };
+  }, [rows]);
+
+  const load = (q = appliedQuery) => {
     setLoading(true);
     const params = new URLSearchParams();
     if (q?.trim()) params.set('q', q.trim());
-    params.set('status', status || 'ACTIVE');
+    params.set('status', 'ALL');
     const url = `/customers?${params.toString()}`;
     HttpService.getListWithAuth(url)
       .then((list) => {
@@ -124,7 +164,7 @@ export default function Customers() {
       setAppliedQuery('');
       setStatusFilter('ACTIVE');
       setLinkedFilter('');
-      load('', 'ACTIVE');
+      load('');
     };
     window.addEventListener('organization-changed', onOrg);
     return () => window.removeEventListener('organization-changed', onOrg);
@@ -143,7 +183,7 @@ export default function Customers() {
   const runSearch = () => {
     const next = query.trim();
     setAppliedQuery(next);
-    load(next, statusFilter);
+    load(next);
   };
 
   const clearFilters = () => {
@@ -152,7 +192,17 @@ export default function Customers() {
     setStatusFilter('ACTIVE');
     setLinkedFilter('');
     setPage(0);
-    load('', 'ACTIVE');
+    load('');
+  };
+
+  const toggleStatusFilter = (status) => {
+    setStatusFilter((current) => (current === status ? 'ALL' : status));
+    setPage(0);
+  };
+
+  const toggleLinkedFilter = (linked) => {
+    setLinkedFilter((current) => (current === linked ? '' : linked));
+    setPage(0);
   };
 
   const openCreate = () => {
@@ -293,7 +343,67 @@ export default function Customers() {
           </Button>
         </Stack>
 
-        <Card aria-busy={loading || undefined}>
+        <Typography
+          component="span"
+          role="status"
+          aria-atomic="true"
+          sx={{
+            position: 'absolute',
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: 'hidden',
+            clip: 'rect(0,0,0,0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+        >
+          {directoryStats.activeCount === 1
+            ? '1 active customer'
+            : `${directoryStats.activeCount} active customers`}
+        </Typography>
+
+        <Box sx={{ ...FOUR_COL_GRID_SX, mb: 3 }}>
+          <OpsStatCard
+            title="Active"
+            value={directoryStats.activeCount}
+            format="count"
+            icon="eva:people-outline"
+            color="success"
+            onClick={() => toggleStatusFilter('ACTIVE')}
+            sx={statusFilter === 'ACTIVE' ? ACTIVE_STAT_SX : undefined}
+          />
+          <OpsStatCard
+            title="Archived"
+            value={directoryStats.archivedCount}
+            format="count"
+            icon="eva:archive-outline"
+            color="warning"
+            onClick={() => toggleStatusFilter('ARCHIVED')}
+            sx={statusFilter === 'ARCHIVED' ? ACTIVE_STAT_SX : undefined}
+          />
+          <OpsStatCard
+            title="Linked"
+            value={directoryStats.linkedCount}
+            format="count"
+            icon="eva:link-2-outline"
+            color="info"
+            onClick={() => toggleLinkedFilter('linked')}
+            sx={linkedFilter === 'linked' ? ACTIVE_STAT_SX : undefined}
+          />
+          <OpsStatCard
+            title="Unlinked"
+            value={directoryStats.unlinkedCount}
+            format="count"
+            icon="eva:link-break-outline"
+            color="secondary"
+            onClick={() => toggleLinkedFilter('unlinked')}
+            sx={linkedFilter === 'unlinked' ? ACTIVE_STAT_SX : undefined}
+          />
+        </Box>
+
+        <Card sx={{ borderRadius: 2 }} aria-busy={loading || undefined}>
           <Stack
             direction={{ xs: 'column', md: 'row' }}
             spacing={2}
@@ -324,10 +434,8 @@ export default function Customers() {
               label="Status"
               value={statusFilter}
               onChange={(event) => {
-                const next = event.target.value;
-                setStatusFilter(next);
+                setStatusFilter(event.target.value);
                 setPage(0);
-                load(appliedQuery, next);
               }}
               sx={{ minWidth: 160 }}
             >
@@ -372,14 +480,14 @@ export default function Customers() {
             </Typography>
           ) : rows.length === 0 ? (
             <EmptyState
-              title={statusFilter === 'ARCHIVED' ? 'No archived customers' : 'No customers yet'}
+              title={appliedQuery ? 'No customers match your search' : 'No customers yet'}
               description={
-                statusFilter === 'ARCHIVED'
-                  ? 'Archived payees will appear here. Switch status to Active or All to see current contacts.'
+                appliedQuery
+                  ? 'Try a different name, or clear the search to see the full directory.'
                   : 'Add a payee contact, then optionally link their Digital Purse account number.'
               }
-              actionLabel={statusFilter === 'ACTIVE' ? 'New customer' : undefined}
-              onAction={statusFilter === 'ACTIVE' ? openCreate : undefined}
+              actionLabel={!appliedQuery ? 'New customer' : undefined}
+              onAction={!appliedQuery ? openCreate : undefined}
             />
           ) : filteredRows.length === 0 ? (
             <EmptyState

@@ -2,7 +2,13 @@
 
 > Actionable checklist for the current feature or sprint. Sync with `.agent/SESSION.md` on `/handoff`.
 
-## Current sprint — Customers & Approvals filters
+## Current sprint — Approvals queue stats
+
+- [x] `/approvals` OpsStatCards (Pending / Approved / Rejected / Awaiting)
+- [x] Click-to-filter Status + actingId on Approve/Reject
+- [x] SESSION handoff
+
+## Done (prior — Customers & Approvals filters)
 
 - [x] `GET /customers?status=ACTIVE|ARCHIVED|ALL` (default ACTIVE) + CustomerServiceTest
 - [x] Customers toolbar: Search, Status, Linked, Clear + empty-match

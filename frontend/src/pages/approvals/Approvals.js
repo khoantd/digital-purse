@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  Box,
   Button,
   Card,
   Container,
@@ -21,7 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import Iconify from '../../components/iconify';
 import Label from '../../components/label';
 import Scrollbar from '../../components/scrollbar';
-import { EmptyState, MoneyText } from '../../components/wallet-ui';
+import { EmptyState, MoneyText, OpsStatCard } from '../../components/wallet-ui';
 import HttpService from '../../services/HttpService';
 import { createIdempotencyKey } from '../../utils/idempotency';
 import { fDateTime, parseDateInputEnd, parseDateInputStart, toDate } from '../../utils/formatTime';
@@ -47,6 +48,10 @@ function operationLabel(operation) {
   return operation || '—';
 }
 
+function sumAmounts(list) {
+  return list.reduce((total, row) => total + (Number(row.amount) || 0), 0);
+}
+
 const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
   { value: 'PENDING', label: 'Pending' },
@@ -67,6 +72,22 @@ const PAGINATION_SX = {
   cursor: 'pointer',
   '& .MuiTablePagination-actions button': { cursor: 'pointer' },
   '& .MuiInputBase-root': { cursor: 'pointer' },
+};
+
+const FOUR_COL_GRID_SX = {
+  display: 'grid',
+  gap: 2,
+  gridTemplateColumns: {
+    xs: '1fr',
+    sm: 'repeat(2, 1fr)',
+    md: 'repeat(4, 1fr)',
+  },
+};
+
+const ACTIVE_STAT_SX = {
+  boxShadow: (theme) => theme.customShadows.z8,
+  outline: (theme) => `2px solid ${theme.palette.primary.main}`,
+  outlineOffset: 1,
 };
 
 function matchesFilters(row, { statusFilter, operationFilter, dateFrom, dateTo }) {
@@ -96,9 +117,23 @@ export default function Approvals() {
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [actingId, setActingId] = useState(null);
   const navigate = useNavigate();
 
   const filtersActive = Boolean(statusFilter || operationFilter || dateFrom || dateTo);
+
+  const scopeRows = useMemo(
+    () =>
+      rows.filter((row) =>
+        matchesFilters(row, {
+          statusFilter: '',
+          operationFilter,
+          dateFrom,
+          dateTo,
+        })
+      ),
+    [rows, operationFilter, dateFrom, dateTo]
+  );
 
   const filteredRows = useMemo(
     () =>
@@ -107,6 +142,18 @@ export default function Approvals() {
       ),
     [rows, statusFilter, operationFilter, dateFrom, dateTo]
   );
+
+  const queueStats = useMemo(() => {
+    const pending = scopeRows.filter((row) => (row.status || '').toUpperCase() === 'PENDING');
+    const approved = scopeRows.filter((row) => (row.status || '').toUpperCase() === 'APPROVED');
+    const rejected = scopeRows.filter((row) => (row.status || '').toUpperCase() === 'REJECTED');
+    return {
+      pendingCount: pending.length,
+      approvedCount: approved.length,
+      rejectedCount: rejected.length,
+      awaitingAmount: sumAmounts(pending),
+    };
+  }, [scopeRows]);
 
   const load = () => {
     setLoading(true);
@@ -155,7 +202,13 @@ export default function Approvals() {
     setPage(0);
   };
 
+  const toggleStatusFilter = (status) => {
+    setStatusFilter((current) => (current === status ? '' : status));
+    setPage(0);
+  };
+
   const approve = (id) => {
+    setActingId(id);
     HttpService.postWithAuth(`/spend-requests/${id}/approve`, null, {
       'Idempotency-Key': createIdempotencyKey(),
     })
@@ -165,10 +218,12 @@ export default function Approvals() {
       })
       .catch((error) => {
         enqueueSnackbar(error.response?.data?.message || 'Approve failed', { variant: 'error' });
-      });
+      })
+      .finally(() => setActingId(null));
   };
 
   const reject = (id) => {
+    setActingId(id);
     HttpService.postWithAuth(`/spend-requests/${id}/reject`, null)
       .then(() => {
         enqueueSnackbar('Spend request rejected', { variant: 'success' });
@@ -176,7 +231,8 @@ export default function Approvals() {
       })
       .catch((error) => {
         enqueueSnackbar(error.response?.data?.message || 'Reject failed', { variant: 'error' });
-      });
+      })
+      .finally(() => setActingId(null));
   };
 
   return (
@@ -192,6 +248,68 @@ export default function Approvals() {
             here until another OWNER, ADMIN, or APPROVER acts.
           </Typography>
         </Stack>
+
+        <Typography
+          component="span"
+          role="status"
+          aria-atomic="true"
+          sx={{
+            position: 'absolute',
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: 'hidden',
+            clip: 'rect(0,0,0,0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+        >
+          {queueStats.pendingCount === 1
+            ? '1 pending approval'
+            : `${queueStats.pendingCount} pending approvals`}
+        </Typography>
+
+        <Box sx={{ ...FOUR_COL_GRID_SX, mb: 3 }}>
+          <OpsStatCard
+            title="Pending"
+            value={queueStats.pendingCount}
+            format="count"
+            icon="eva:clock-outline"
+            color="warning"
+            subtitle={queueStats.pendingCount > 0 ? 'Needs dual-control' : undefined}
+            onClick={() => toggleStatusFilter('PENDING')}
+            sx={statusFilter === 'PENDING' ? ACTIVE_STAT_SX : undefined}
+          />
+          <OpsStatCard
+            title="Approved"
+            value={queueStats.approvedCount}
+            format="count"
+            icon="eva:checkmark-circle-2-outline"
+            color="success"
+            onClick={() => toggleStatusFilter('APPROVED')}
+            sx={statusFilter === 'APPROVED' ? ACTIVE_STAT_SX : undefined}
+          />
+          <OpsStatCard
+            title="Rejected"
+            value={queueStats.rejectedCount}
+            format="count"
+            icon="eva:close-circle-outline"
+            color="error"
+            onClick={() => toggleStatusFilter('REJECTED')}
+            sx={statusFilter === 'REJECTED' ? ACTIVE_STAT_SX : undefined}
+          />
+          <OpsStatCard
+            title="Awaiting"
+            value={queueStats.awaitingAmount}
+            format="money"
+            icon="eva:diagonal-arrow-right-up-fill"
+            color="info"
+            onClick={() => toggleStatusFilter('PENDING')}
+            sx={statusFilter === 'PENDING' ? ACTIVE_STAT_SX : undefined}
+          />
+        </Box>
+
         <Card sx={{ borderRadius: 2 }} aria-busy={loading || undefined}>
           <Stack
             direction={{ xs: 'column', md: 'row' }}
@@ -347,15 +465,17 @@ export default function Approvals() {
                                 <Button
                                   size="small"
                                   variant="contained"
+                                  disabled={actingId === row.id}
                                   onClick={() => approve(row.id)}
                                   sx={{ cursor: 'pointer' }}
                                 >
-                                  Approve
+                                  {actingId === row.id ? 'Working…' : 'Approve'}
                                 </Button>
                                 <Button
                                   size="small"
                                   color="inherit"
                                   variant="outlined"
+                                  disabled={actingId === row.id}
                                   onClick={() => reject(row.id)}
                                   sx={{ cursor: 'pointer' }}
                                 >

@@ -84,7 +84,7 @@
 | Transfers | Tabs: send / add / withdraw (`/transfers`); `Idempotency-Key`; pending dual-control → Approvals |
 | Transactions | Paginated history (`/transactions`); Reverse action for OWNER/ADMIN on eligible SUCCESS rows |
 | Organizations | Header org switcher sends `X-Organization-Id` |
-| Customers | Payee contacts CRUD + wallet link (`/customers`); filters: search, status, linked wallet |
+| Customers | Payee contacts CRUD + wallet link (`/customers`); directory stats (Active / Archived / Linked / Unlinked); filters: search, status, linked wallet |
 | Approvals | Dual-control spend queue (`/approvals`); filters: status, operation, date range |
 | Settings | Organization profile, members/roles, editable limits (`/settings` Controls), subscription usage (`/settings` Subscription) |
 | Access control | `PrivateRoute` + `ProtectedRoute` for `ROLE_USER` / `ROLE_ADMIN` |
