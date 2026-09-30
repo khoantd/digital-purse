@@ -1,12 +1,16 @@
 package com.github.yildizmy.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.github.yildizmy.validator.NotCommonPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import static com.github.yildizmy.common.Constants.PASSWORD_MAX_LENGTH;
+import static com.github.yildizmy.common.Constants.PASSWORD_MIN_LENGTH;
 
 /**
  * Data Transfer Object for signup request.
@@ -37,7 +41,8 @@ public class SignupRequest {
     @NotBlank(message = "{validation.user.email.required}")
     private String email;
 
-    @Size(min = 6, max = 100, message = "{validation.user.password.length}")
+    @Size(min = PASSWORD_MIN_LENGTH, max = PASSWORD_MAX_LENGTH, message = "{validation.user.password.length}")
     @NotBlank(message = "{validation.user.password.required}")
+    @NotCommonPassword
     private String password;
 }

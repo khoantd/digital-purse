@@ -20,6 +20,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import static com.github.yildizmy.common.Constants.TRACE;
 import static com.github.yildizmy.common.MessageKeys.*;
@@ -120,6 +121,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return buildErrorResponse(ex, HttpStatus.FORBIDDEN, request);
     }
 
+    @ExceptionHandler(TooManyRequestsException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public ResponseEntity<Object> handleTooManyRequestsException(TooManyRequestsException ex, WebRequest request) {
+        log.warn(messageConfig.getMessage(ERROR_TOO_MANY_REQUESTS, ex));
+        return buildErrorResponse(ex, HttpStatus.TOO_MANY_REQUESTS, request);
+    }
+
     /**
      * Handles AuthenticationException.
      *
@@ -131,7 +139,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ResponseEntity<Object> handleAuthenticationException(AuthenticationException ex, WebRequest request) {
         log.error(messageConfig.getMessage(ERROR_UNAUTHORIZED_DETAILS, ex));
-        return buildErrorResponse(ex, HttpStatus.UNAUTHORIZED, request);
+        return buildErrorResponse(ex, messageConfig.getMessage(ERROR_UNAUTHORIZED), HttpStatus.UNAUTHORIZED, request);
     }
 
     /**
@@ -199,6 +207,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * Build error message by the given exception, message, status and request.
+     * Stack traces and internal 5xx messages are never returned when {@code exception.trace} is false (SEC-11).
      *
      * @param ex
      * @param message
@@ -210,7 +219,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                       String message,
                                                       HttpStatusCode statusCode,
                                                       WebRequest request) {
-        final ErrorResponse errorResponse = new ErrorResponse(statusCode.value(), message);
+        final String correlationId = UUID.randomUUID().toString();
+        log.error("Request failed [correlationId={}]: {}", correlationId, ex.toString(), ex);
+
+        String clientMessage = message;
+        if (!printStackTrace && statusCode.is5xxServerError()) {
+            clientMessage = messageConfig.getMessage(ERROR_UNKNOWN);
+        }
+
+        final ErrorResponse errorResponse = new ErrorResponse(statusCode.value(), clientMessage);
+        errorResponse.setCorrelationId(correlationId);
         if (printStackTrace && isTraceOn(request)) {
             errorResponse.setStackTrace(ExceptionUtils.getStackTrace(ex));
         }

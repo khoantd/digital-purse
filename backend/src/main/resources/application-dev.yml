@@ -1,3 +1,7 @@
+# Local debugging only — never enable exception.trace in production.
+exception:
+  trace: false
+
 logging:
   level:
     org.springframework.security: debug

@@ -1,0 +1,22 @@
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+exception:
+  trace: false
+
+logging:
+  level:
+    com.github.yildizmy: info
+    org.springframework: warn
+    org.hibernate: error
+    org.springframework.security: warn
+
+app:
+  security:
+    cookieSecure: true
+    cors:
+      allowed-origins: ${cors_allowed_origins}

@@ -49,14 +49,14 @@ class SignupRequestMapperTest {
                   "lastName": "Admin",
                   "username": "alice",
                   "email": "alice@example.com",
-                  "password": "password123",
+                  "password": "Str0ng!Passw0rd",
                   "roles": ["ROLE_ADMIN"]
                 }
                 """;
         SignupRequest request = objectMapper.readValue(maliciousJson, SignupRequest.class);
         var userRole = createRole(2L, RoleType.ROLE_USER);
 
-        when(passwordEncoder.encode("password123")).thenReturn("encoded");
+        when(passwordEncoder.encode("Str0ng!Passw0rd")).thenReturn("encoded");
         when(roleService.getReferenceByTypeIsIn(any())).thenReturn(List.of(userRole));
 
         User user = mapper.toUser(request);

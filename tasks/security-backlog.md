@@ -61,87 +61,102 @@
 
 ## 🟡 High
 
-- [ ] **SEC-06 — Mass assignment of server-controlled fields**
+- [x] **SEC-06 — Mass assignment of server-controlled fields**
   - Severity: High
   - Files: `backend/src/main/java/com/github/yildizmy/dto/request/TransactionRequest.java`,
-    `backend/src/main/java/com/github/yildizmy/dto/mapper/TransactionRequestMapper.java:33-39`,
+    `backend/src/main/java/com/github/yildizmy/dto/mapper/TransactionRequestMapper.java`,
     `backend/src/main/java/com/github/yildizmy/dto/request/WalletRequest.java`,
-    `backend/src/main/java/com/github/yildizmy/service/WalletService.java:115-131`
+    `backend/src/main/java/com/github/yildizmy/service/WalletService.java`
   - Problem: client controls `id` (flows into `save()` → merge risk), `userId` (create wallet for another user), opening `balance`.
   - Fix: remove `id`/`status`/`referenceNumber`/`createdAt` from request DTOs (or `@Null` + mapper ignores); derive `userId` from auth principal.
   - Accept: server-generated fields ignore/forbid client values (mapper + API tests).
+  - Done: stripped server fields from `TransactionRequest`; mapper always sets status/ref/createdAt; wallet `id` ignored; `userId` overwritten from principal; update mutates name/iban only. `TransactionRequestMapperTest` + `WalletServiceTest.create_shouldIgnoreClientUserId…`.
 
-- [ ] **SEC-07 — JWT in `localStorage`, no revocation**
+- [x] **SEC-07 — JWT in `localStorage`, no revocation**
   - Severity: High
-  - Files: `frontend/src/services/AuthService.js:6`, `frontend/src/services/AuthHeader.js:6`,
+  - Files: `frontend/src/services/AuthService.js`, `frontend/src/services/AuthHeader.js`,
     `backend/src/main/java/com/github/yildizmy/security/JwtUtils.java`
   - Problem: any XSS = full account takeover; 1h stateless token, no logout/blacklist.
   - Fix: short-lived access token in memory + rotating HttpOnly `Secure; SameSite=Strict` refresh cookie; server logout denylist.
   - Accept: token absent from `localStorage`; logout invalidates session (frontend + backend tests).
+  - Done: 15m access JWT (memory only) + 7d refresh HttpOnly cookie (`SameSite=Strict`; `cookieSecure` false for local HTTP); `/auth/refresh` + `/auth/logout` with `TokenDenylist`; frontend `withCredentials` + silent refresh on boot. Tests: `TokenDenylistTest`, `AuthServiceTest.logout_…`.
 
-- [ ] **SEC-08 — No brute-force protection on auth endpoints**
+- [x] **SEC-08 — No brute-force protection on auth endpoints**
   - Severity: High
-  - Files: `backend/src/main/java/com/github/yildizmy/controller/AuthController.java:30-46`
+  - Files: `backend/src/main/java/com/github/yildizmy/controller/AuthController.java`,
+    `backend/src/main/java/com/github/yildizmy/security/AuthRateLimiter.java`
   - Problem: unlimited `/login` + `/signup` attempts.
   - Fix: rate-limit (e.g. Bucket4j: 5 logins/min/IP + account lockout with backoff); log/alert spikes.
   - Accept: 6th rapid login attempt throttled (test with mocked limiter or integration test).
+  - Done: Bucket4j 5/min/IP on login/signup/refresh → 429.`AuthRateLimiterTest`.
 
-- [ ] **SEC-09 — User enumeration via signup/login messages**
+- [x] **SEC-09 — User enumeration via signup/login messages**
   - Severity: High
-  - Files: `backend/src/main/java/com/github/yildizmy/service/AuthService.java:76-79`
+  - Files: `backend/src/main/java/com/github/yildizmy/service/AuthService.java`
   - Problem: distinct `USERNAME_EXISTS` vs `EMAIL_EXISTS` (and likely login) messages.
   - Fix: generic "credentials already in use / invalid credentials" responses; uniform timing.
   - Accept: enumeration probes return indistinguishable responses (tests).
+  - Done: signup always checks username+email and returns `ERROR_CREDENTIALS_IN_USE`; login/user-not-found uses generic Unauthorized. `AuthServiceTest` covers both conflict paths.
 
-- [ ] **SEC-10 — Race condition allows double-spend**
+- [x] **SEC-10 — Race condition allows double-spend**
   - Severity: High
   - Files: `backend/src/main/java/com/github/yildizmy/domain/entity/Wallet.java`,
-    `backend/src/main/java/com/github/yildizmy/service/WalletService.java:140-203`
+    `backend/src/main/java/com/github/yildizmy/service/WalletService.java`,
+    `backend/src/main/resources/db/migration/V6__wallet_version.sql`
   - Problem: no `@Version`; concurrent transfers can both pass the balance check.
   - Fix: `@Version` optimistic locking on `Wallet` with retry, or pessimistic lock on debit wallet; add concurrent-transfer test.
   - Accept: parallel overdraft attempts leave balance consistent, one fails (concurrency test).
+  - Done: `@Version` + Flyway `version` column; `findByIbanForUpdate` (PESSIMISTIC_WRITE) on debit paths. `WalletConcurrencyTest`.
 
 ## 🟢 Medium
 
-- [ ] **SEC-11 — Stack-trace / message disclosure via `?trace=true`**
+- [x] **SEC-11 — Stack-trace / message disclosure via `?trace=true`**
   - Severity: Medium
-  - Files: `backend/src/main/resources/application.yml:60-70`,
-    `backend/src/main/java/com/github/yildizmy/exception/GlobalExceptionHandler.java:200-217`
+  - Files: `backend/src/main/resources/application.yml`,
+    `backend/src/main/resources/application-prod.yml`,
+    `backend/src/main/java/com/github/yildizmy/exception/GlobalExceptionHandler.java`
   - Problem: `include-message: always` + `include-stacktrace: on_param` + `exception.trace: true` expose internals on demand.
   - Fix: prod profile → `include-message: never` (or `on_param`), `include-stacktrace: never`, `exception.trace: false`; log server-side with correlation id.
   - Accept: prod error responses carry no stack/message internals (config + handler test).
+  - Done: default `exception.trace: false` + `include-stacktrace: never`; `application-prod.yml` hardens messages; 5xx clients get generic message + correlationId; stack only when trace enabled. `GlobalExceptionHandlerTest`.
 
-- [ ] **SEC-12 — Missing security headers**
+- [x] **SEC-12 — Missing security headers**
   - Severity: Medium
-  - Files: `backend/src/main/java/com/github/yildizmy/config/SecurityConfig.java:75-88`
+  - Files: `backend/src/main/java/com/github/yildizmy/config/SecurityConfig.java`
   - Problem: no HSTS/CSP/`X-Content-Type-Options`/frame options.
   - Fix: enable Spring Security header defaults + HSTS for prod; add CSP for the React frontend.
   - Accept: responses carry the header set (MockMvc header assertions).
+  - Done: explicit headers (nosniff, DENY frame, HSTS 1y, CSP `default-src 'self'`). `SecurityHeadersAndCorsTest`.
 
-- [ ] **SEC-13 — Weak password policy + password `.trim()`**
+- [x] **SEC-13 — Weak password policy + password `.trim()`**
   - Severity: Medium
-  - Files: `backend/src/main/java/com/github/yildizmy/dto/request/SignupRequest.java:39-41`,
-    `backend/src/main/java/com/github/yildizmy/service/AuthService.java:48`
+  - Files: `backend/src/main/java/com/github/yildizmy/dto/request/SignupRequest.java`,
+    `backend/src/main/java/com/github/yildizmy/service/AuthService.java`,
+    `backend/src/main/java/com/github/yildizmy/validator/NotCommonPassword.java`
   - Problem: min 6 chars, no breach-list check; login `.trim()`s passwords, altering credentials.
   - Fix: min 10–12 chars (+ breach-list check); hash exactly what was sent.
   - Accept: short passwords rejected; password with spaces authenticates verbatim (tests).
+  - Done: signup min 12 + `@NotCommonPassword` denylist; login no longer trims password. `PasswordPolicyTest`, `AuthServiceTest.login_shouldAuthenticateWithPasswordVerbatimIncludingSpaces`.
 
-- [ ] **SEC-14 — Sensitive data in logs**
+- [x] **SEC-14 — Sensitive data in logs**
   - Severity: Medium
-  - Files: `backend/src/main/java/com/github/yildizmy/service/WalletService.java:125,154,175,198,229,242`,
-    `backend/src/main/java/com/github/yildizmy/service/TransactionService.java:103`,
-    `backend/src/main/java/com/github/yildizmy/service/AuthService.java:58,83`
+  - Files: `backend/src/main/java/com/github/yildizmy/service/WalletService.java`,
+    `backend/src/main/java/com/github/yildizmy/service/TransactionService.java`,
+    `backend/src/main/java/com/github/yildizmy/service/AuthService.java`,
+    `backend/src/main/resources/messages.properties`
   - Problem: IBANs, balances, usernames at INFO into `./logs/application.log`.
   - Fix: drop/mask PII and balances in logs; use append-only audit table for money movement.
   - Accept: no IBAN/balance in log output (log-capture test or manual verify).
+  - Done: INFO logs use entity IDs only; transaction rows remain the money-movement audit trail. `SensitiveLoggingTest`.
 
-- [ ] **SEC-15 — CORS origin hard-coded, wildcard headers**
+- [x] **SEC-15 — CORS origin hard-coded, wildcard headers**
   - Severity: Medium
-  - Files: `backend/src/main/java/com/github/yildizmy/common/Constants.java:13`,
-    `backend/src/main/java/com/github/yildizmy/config/SecurityConfig.java:91-100`
+  - Files: `backend/src/main/java/com/github/yildizmy/config/SecurityConfig.java`,
+    `backend/src/main/resources/application.yml`, `.env.example`
   - Problem: `localhost:3000` baked in; `setAllowedHeaders("*")`.
   - Fix: externalize allowed origins per environment; enumerate required headers once cookies/credentials are used.
   - Accept: prod serves frontend origin from config; preflight succeeds (test).
+  - Done: `app.security.cors.allowed-origins` / `cors_allowed_origins`; enumerated CORS headers. `SecurityHeadersAndCorsTest`.
 
 ---
 

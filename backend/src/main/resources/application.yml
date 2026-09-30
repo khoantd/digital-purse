@@ -62,13 +62,17 @@ server:
   error:
     include-message: always
     include-binding-errors: always
-    include-stacktrace: on_param
+    include-stacktrace: never
     include-exception: false
 
 exception:
-  trace: true
+  trace: false
 
 app:
   security:
     jwtSecret: ${jwt_secret}
-    jwtExpirationMs: 3600000
+    jwtExpirationMs: 900000
+    jwtRefreshExpirationMs: 604800000
+    cookieSecure: false
+    cors:
+      allowed-origins: ${cors_allowed_origins:http://localhost:3000}

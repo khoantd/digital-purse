@@ -14,13 +14,12 @@ import java.math.BigDecimal;
 
 /**
  * Data Transfer Object for Wallet request.
+ * Server-controlled fields (id) are omitted; userId is derived from the auth principal in the service.
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class WalletRequest {
-
-    private Long id;
 
     @ValidIban(message = "{validation.iban.format}")
     @NotBlank(message = "{validation.iban.required}")
@@ -35,6 +34,8 @@ public class WalletRequest {
     @Digits(integer = 12, fraction = 2, message = "{validation.field.balance.digits}")
     private BigDecimal balance;
 
-    @NotNull(message = "{validation.field.user.required}")
+    /**
+     * Set server-side from the authenticated principal; ignored if supplied by the client.
+     */
     private Long userId;
 }

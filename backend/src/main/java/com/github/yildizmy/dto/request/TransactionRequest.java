@@ -1,6 +1,5 @@
 package com.github.yildizmy.dto.request;
 
-import com.github.yildizmy.domain.enums.Status;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,18 +10,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.UUID;
 
 /**
  * Data Transfer Object for Transaction request.
+ * Server-controlled fields (id, status, referenceNumber, createdAt) are intentionally omitted.
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class TransactionRequest {
-
-    private Long id;
 
     @NotNull(message = "{validation.field.amount.required}")
     @Positive(message = "{validation.field.amount.positive}")
@@ -31,12 +27,6 @@ public class TransactionRequest {
 
     @Size(max = 50, message = "{validation.field.description.length}")
     private String description;
-
-    private Instant createdAt;
-
-    private UUID referenceNumber;
-
-    private Status status;
 
     @NotBlank(message = "{validation.iban.sender.required}")
     private String fromWalletIban;

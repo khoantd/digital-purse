@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import static com.github.yildizmy.common.MessageKeys.ERROR_USERNAME_NOT_FOUND;
+import static com.github.yildizmy.common.MessageKeys.ERROR_UNAUTHORIZED;
 
 /**
  * Service used for UserDetails related operations.
@@ -27,7 +27,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         final User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(messageConfig.getMessage(ERROR_USERNAME_NOT_FOUND, username)));
+                .orElseThrow(() -> new UsernameNotFoundException(messageConfig.getMessage(ERROR_UNAUTHORIZED)));
         return UserDetailsImpl.build(user);
     }
 }

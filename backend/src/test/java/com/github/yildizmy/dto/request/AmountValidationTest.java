@@ -107,7 +107,6 @@ class AmountValidationTest {
         request.setIban("TR330006100519786457841326");
         request.setName("Primary");
         request.setBalance(new BigDecimal("100.00"));
-        request.setUserId(1L);
         return request;
     }
 }

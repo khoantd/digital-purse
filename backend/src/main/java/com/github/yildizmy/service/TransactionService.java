@@ -107,7 +107,7 @@ public class TransactionService {
     public CommandResponse create(TransactionRequest request) {
         final Transaction transaction = transactionRequestMapper.toTransaction(request);
         transactionRepository.save(transaction);
-        log.info(messageConfig.getMessage(INFO_TRANSACTION_CREATED, transaction.getFromWallet().getIban(), transaction.getToWallet().getIban(), transaction.getAmount()));
+        log.info(messageConfig.getMessage(INFO_TRANSACTION_CREATED, transaction.getId()));
         return CommandResponse.builder().id(transaction.getId()).build();
     }
 }

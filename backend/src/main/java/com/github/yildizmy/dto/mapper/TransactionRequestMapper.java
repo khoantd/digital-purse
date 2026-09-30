@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Lazy;
 
 /**
  * Mapper used for mapping TransactionRequest fields.
+ * id / status / referenceNumber / createdAt are always server-generated.
  */
 @Mapper(componentModel = "spring",
         uses = {WalletService.class, TypeService.class},
@@ -29,15 +30,18 @@ public abstract class TransactionRequestMapper {
         this.typeService = typeService;
     }
 
-    // set default value of the status field as Status.SUCCESS
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", expression = "java(com.github.yildizmy.domain.enums.Status.SUCCESS)")
     @Mapping(target = "referenceNumber", expression = "java(java.util.UUID.randomUUID())")
-    @Mapping(source = "createdAt", target = "createdAt", defaultExpression = "java(java.time.Instant.now())")
+    @Mapping(target = "createdAt", expression = "java(java.time.Instant.now())")
     @Mapping(target = "fromWallet", ignore = true)
     @Mapping(target = "toWallet", ignore = true)
     @Mapping(target = "type", ignore = true)
     public abstract Transaction toTransaction(TransactionRequest dto);
 
+    @Mapping(target = "fromWalletIban", source = "fromWallet.iban")
+    @Mapping(target = "toWalletIban", source = "toWallet.iban")
+    @Mapping(target = "typeId", source = "type.id")
     public abstract TransactionRequest toTransactionRequest(Transaction entity);
 
     @AfterMapping

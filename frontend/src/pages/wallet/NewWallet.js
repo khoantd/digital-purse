@@ -4,7 +4,6 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import AuthService from '../../services/AuthService';
 import HttpService from '../../services/HttpService';
 
 export default function NewWallet() {
@@ -13,7 +12,6 @@ export default function NewWallet() {
     balance: '',
     iban: '',
     email: '',
-    userId: AuthService.getCurrentUser()?.id,
   };
 
   const navigate = useNavigate();

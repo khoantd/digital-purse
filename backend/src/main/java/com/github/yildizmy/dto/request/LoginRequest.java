@@ -6,8 +6,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import static com.github.yildizmy.common.Constants.PASSWORD_MAX_LENGTH;
+
 /**
  * Data Transfer Object for Login request.
+ * Password length is not raised here so existing seed accounts can still authenticate;
+ * signup enforces the stronger policy (SEC-13).
  */
 @Data
 @AllArgsConstructor
@@ -18,7 +22,7 @@ public class LoginRequest {
     @NotBlank(message = "{validation.user.username.required}")
     private String username;
 
-    @Size(min = 6, max = 100, message = "{validation.user.password.length}")
+    @Size(max = PASSWORD_MAX_LENGTH, message = "{validation.user.password.length}")
     @NotBlank(message = "{validation.user.password.required}")
     private String password;
 }

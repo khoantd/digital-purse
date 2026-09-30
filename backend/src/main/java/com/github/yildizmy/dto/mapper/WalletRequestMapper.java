@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Mapper used for mapping WalletRequest fields.
+ * Entity id is never taken from the client request.
  */
 @Mapper(componentModel = "spring",
         uses = {UserService.class},
@@ -21,11 +22,16 @@ public abstract class WalletRequestMapper {
         this.userService = userService;
     }
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "name", expression = "java(org.apache.commons.text.WordUtils.capitalizeFully(dto.getName()))")
     @Mapping(target = "iban", expression = "java(org.apache.commons.lang3.StringUtils.upperCase(dto.getIban()))")
     @Mapping(target = "user", ignore = true)
+    @Mapping(target = "fromTransactions", ignore = true)
+    @Mapping(target = "toTransactions", ignore = true)
     public abstract Wallet toWallet(WalletRequest dto);
 
+    @Mapping(target = "userId", source = "user.id")
     public abstract WalletRequest toWalletRequest(Wallet entity);
 
     @AfterMapping

@@ -31,6 +31,10 @@ public class Wallet {
     )
     private Long id;
 
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
     @Column(length = 34, nullable = false, unique = true)
     private String iban;
 
@@ -70,21 +74,3 @@ public class Wallet {
         transaction.setToWallet(null);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

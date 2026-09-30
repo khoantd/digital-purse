@@ -230,9 +230,12 @@ class WalletServiceTest {
 
     @Test
     void create_shouldCreateNewWallet() {
-        var request = createTestWalletRequest(1L, "TEST123", "Test Wallet", BigDecimal.valueOf(1000));
+        var request = createTestWalletRequest(null, "TEST123", "Test Wallet", BigDecimal.valueOf(1000));
         var wallet = createTestWallet(1L, 1L, "TEST123", "Test Wallet", BigDecimal.valueOf(1000));
+        var currentUser = new UserDetailsImpl(1L, "user", "pw", "A", "B",
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
+        when(securityAccess.currentUser()).thenReturn(currentUser);
         when(walletRepository.existsByIbanIgnoreCase(anyString())).thenReturn(false);
         when(walletRepository.existsByUserIdAndNameIgnoreCase(anyLong(), anyString())).thenReturn(false);
         when(walletRequestMapper.toWallet(request)).thenReturn(wallet);
@@ -244,9 +247,10 @@ class WalletServiceTest {
 
         assertNotNull(result);
         assertEquals(1L, result.id());
-        verify(securityAccess).requireSelfOrAdmin(1L);
+        assertEquals(1L, request.getUserId());
+        verify(securityAccess).currentUser();
         verify(walletRepository).existsByIbanIgnoreCase(request.getIban());
-        verify(walletRepository).existsByUserIdAndNameIgnoreCase(request.getUserId(), request.getName());
+        verify(walletRepository).existsByUserIdAndNameIgnoreCase(1L, request.getName());
         verify(ibanValidator).isValid(request.getIban(), null);
         verify(walletRequestMapper).toWallet(request);
         verify(walletRepository).save(wallet);
@@ -254,13 +258,36 @@ class WalletServiceTest {
     }
 
     @Test
-    void create_shouldThrowExceptionWhenIbanAlreadyExists() {
-        var request = createTestWalletRequest(1L, "TEST123", "Test Wallet", BigDecimal.valueOf(1000));
+    void create_shouldIgnoreClientUserIdAndUseAuthenticatedUser() {
+        var request = createTestWalletRequest(999L, "TEST123", "Test Wallet", BigDecimal.valueOf(1000));
+        var wallet = createTestWallet(1L, 1L, "TEST123", "Test Wallet", BigDecimal.valueOf(1000));
+        var currentUser = new UserDetailsImpl(1L, "user", "pw", "A", "B",
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
+        when(securityAccess.currentUser()).thenReturn(currentUser);
+        when(walletRepository.existsByIbanIgnoreCase(anyString())).thenReturn(false);
+        when(walletRepository.existsByUserIdAndNameIgnoreCase(eq(1L), anyString())).thenReturn(false);
+        when(walletRequestMapper.toWallet(request)).thenReturn(wallet);
+        when(walletRepository.save(wallet)).thenReturn(wallet);
+        when(walletTransactionRequestMapper.toTransactionRequest(request)).thenReturn(new TransactionRequest());
+        when(transactionService.create(any(TransactionRequest.class))).thenReturn(new CommandResponse(1L));
+
+        walletService.create(request);
+
+        assertEquals(1L, request.getUserId());
+        verify(walletRepository).existsByUserIdAndNameIgnoreCase(1L, "Test Wallet");
+    }
+
+    @Test
+    void create_shouldThrowExceptionWhenIbanAlreadyExists() {
+        var request = createTestWalletRequest(null, "TEST123", "Test Wallet", BigDecimal.valueOf(1000));
+        var currentUser = new UserDetailsImpl(1L, "user", "pw", "A", "B",
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+        when(securityAccess.currentUser()).thenReturn(currentUser);
         when(walletRepository.existsByIbanIgnoreCase(anyString())).thenReturn(true);
 
         assertThrows(ElementAlreadyExistsException.class, () -> walletService.create(request));
-        verify(securityAccess).requireSelfOrAdmin(1L);
         verify(walletRepository).existsByIbanIgnoreCase(request.getIban());
     }
 
@@ -270,7 +297,7 @@ class WalletServiceTest {
         var toWallet = createTestWallet(2L, 2L, "TO123", "To Wallet", BigDecimal.valueOf(500));
         var request = createTestTransactionRequest("FROM123", "TO123", BigDecimal.valueOf(200));
 
-        when(walletRepository.findByIban("FROM123")).thenReturn(Optional.of(fromWallet));
+        when(walletRepository.findByIbanForUpdate("FROM123")).thenReturn(Optional.of(fromWallet));
         when(walletRepository.findByIban("TO123")).thenReturn(Optional.of(toWallet));
         when(transactionService.create(request)).thenReturn(new CommandResponse(1L));
 
@@ -281,6 +308,8 @@ class WalletServiceTest {
         assertEquals(BigDecimal.valueOf(800), fromWallet.getBalance());
         assertEquals(BigDecimal.valueOf(700), toWallet.getBalance());
         verify(securityAccess).requireWalletOwnerOrAdmin(fromWallet);
+        verify(walletRepository).findByIbanForUpdate("FROM123");
+        verify(walletRepository).save(fromWallet);
         verify(walletRepository).save(toWallet);
         verify(transactionService).create(request);
     }
@@ -291,7 +320,7 @@ class WalletServiceTest {
         var toWallet = createTestWallet(2L, 1L, "TO123", "To Wallet", BigDecimal.valueOf(500));
         var request = createTestTransactionRequest("FROM123", "TO123", BigDecimal.valueOf(200));
 
-        when(walletRepository.findByIban("FROM123")).thenReturn(Optional.of(fromWallet));
+        when(walletRepository.findByIbanForUpdate("FROM123")).thenReturn(Optional.of(fromWallet));
         when(walletRepository.findByIban("TO123")).thenReturn(Optional.of(toWallet));
         doThrow(new ForbiddenException("forbidden")).when(securityAccess).requireWalletOwnerOrAdmin(fromWallet);
 
@@ -306,7 +335,7 @@ class WalletServiceTest {
         var toWallet = createTestWallet(2L, 2L, "TO123", "To Wallet", BigDecimal.valueOf(500));
         var request = createTestTransactionRequest("FROM123", "TO123", BigDecimal.valueOf(200));
 
-        when(walletRepository.findByIban("FROM123")).thenReturn(Optional.of(fromWallet));
+        when(walletRepository.findByIbanForUpdate("FROM123")).thenReturn(Optional.of(fromWallet));
         when(walletRepository.findByIban("TO123")).thenReturn(Optional.of(toWallet));
 
         assertThrows(InsufficientFundsException.class, () -> walletService.transferFunds(request));
@@ -317,7 +346,7 @@ class WalletServiceTest {
         var toWallet = createTestWallet(1L, 1L, "TO123", "To Wallet", BigDecimal.valueOf(500));
         var request = createTestTransactionRequest(null, "TO123", BigDecimal.valueOf(200));
 
-        when(walletRepository.findByIban("TO123")).thenReturn(Optional.of(toWallet));
+        when(walletRepository.findByIbanForUpdate("TO123")).thenReturn(Optional.of(toWallet));
         when(transactionService.create(request)).thenReturn(new CommandResponse(1L));
 
         var result = walletService.addFunds(request);
@@ -326,6 +355,7 @@ class WalletServiceTest {
         assertEquals(1L, result.id());
         assertEquals(BigDecimal.valueOf(700), toWallet.getBalance());
         verify(securityAccess).requireWalletOwnerOrAdmin(toWallet);
+        verify(walletRepository).findByIbanForUpdate("TO123");
         verify(walletRepository).save(toWallet);
         verify(transactionService).create(request);
     }
@@ -335,7 +365,7 @@ class WalletServiceTest {
         var toWallet = createTestWallet(1L, 2L, "TO123", "To Wallet", BigDecimal.valueOf(500));
         var request = createTestTransactionRequest(null, "TO123", BigDecimal.valueOf(200));
 
-        when(walletRepository.findByIban("TO123")).thenReturn(Optional.of(toWallet));
+        when(walletRepository.findByIbanForUpdate("TO123")).thenReturn(Optional.of(toWallet));
         doThrow(new ForbiddenException("forbidden")).when(securityAccess).requireWalletOwnerOrAdmin(toWallet);
 
         assertThrows(ForbiddenException.class, () -> walletService.addFunds(request));
@@ -347,7 +377,7 @@ class WalletServiceTest {
         var fromWallet = createTestWallet(1L, 1L, "FROM123", "From Wallet", BigDecimal.valueOf(1000));
         var request = createTestTransactionRequest("FROM123", null, BigDecimal.valueOf(200));
 
-        when(walletRepository.findByIban("FROM123")).thenReturn(Optional.of(fromWallet));
+        when(walletRepository.findByIbanForUpdate("FROM123")).thenReturn(Optional.of(fromWallet));
         when(transactionService.create(request)).thenReturn(new CommandResponse(1L));
 
         var result = walletService.withdrawFunds(request);
@@ -356,6 +386,7 @@ class WalletServiceTest {
         assertEquals(1L, result.id());
         assertEquals(BigDecimal.valueOf(800), fromWallet.getBalance());
         verify(securityAccess).requireWalletOwnerOrAdmin(fromWallet);
+        verify(walletRepository).findByIbanForUpdate("FROM123");
         verify(walletRepository).save(fromWallet);
         verify(transactionService).create(request);
     }
@@ -365,7 +396,7 @@ class WalletServiceTest {
         var fromWallet = createTestWallet(1L, 2L, "FROM123", "From Wallet", BigDecimal.valueOf(1000));
         var request = createTestTransactionRequest("FROM123", null, BigDecimal.valueOf(200));
 
-        when(walletRepository.findByIban("FROM123")).thenReturn(Optional.of(fromWallet));
+        when(walletRepository.findByIbanForUpdate("FROM123")).thenReturn(Optional.of(fromWallet));
         doThrow(new ForbiddenException("forbidden")).when(securityAccess).requireWalletOwnerOrAdmin(fromWallet);
 
         assertThrows(ForbiddenException.class, () -> walletService.withdrawFunds(request));

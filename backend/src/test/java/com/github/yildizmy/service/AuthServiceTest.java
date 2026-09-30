@@ -9,9 +9,11 @@ import com.github.yildizmy.exception.ElementAlreadyExistsException;
 import com.github.yildizmy.repository.UserRepository;
 import com.github.yildizmy.security.JwtUtils;
 import com.github.yildizmy.security.UserDetailsImpl;
+import com.github.yildizmy.security.UserDetailsServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -46,6 +48,9 @@ class AuthServiceTest {
     @Mock
     private MessageSourceConfig messageConfig;
 
+    @Mock
+    private UserDetailsServiceImpl userDetailsService;
+
     private LoginRequest loginRequest;
     private UserDetailsImpl userDetails;
     private Authentication authentication;
@@ -69,24 +74,48 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_shouldReturnJwtResponse() {
+    void login_shouldAuthenticateWithPasswordVerbatimIncludingSpaces() {
+        loginRequest = new LoginRequest("  testuser  ", " pass word ");
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
-        when(jwtUtils.generateJwtToken(authentication))
-                .thenReturn("test.jwt.token");
+        when(jwtUtils.generateAccessToken(authentication)).thenReturn("access.jwt");
+        when(jwtUtils.generateRefreshToken(authentication)).thenReturn("refresh.jwt");
 
-        var response = authService.login(loginRequest);
+        authService.login(loginRequest);
 
-        assertNotNull(response);
-        assertEquals("test.jwt.token", response.getToken());
-        assertEquals(1L, response.getId());
-        assertEquals("testuser", response.getUsername());
-        assertEquals("Test", response.getFirstName());
-        assertEquals("User", response.getLastName());
-        assertEquals(Collections.singletonList("ROLE_USER"), response.getRoles());
+        ArgumentCaptor<UsernamePasswordAuthenticationToken> captor =
+                ArgumentCaptor.forClass(UsernamePasswordAuthenticationToken.class);
+        verify(authenticationManager).authenticate(captor.capture());
+        assertEquals("testuser", captor.getValue().getPrincipal());
+        assertEquals(" pass word ", captor.getValue().getCredentials());
+    }
+
+    @Test
+    void login_shouldReturnJwtResponseWithRefreshToken() {
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+        when(jwtUtils.generateAccessToken(authentication)).thenReturn("access.jwt");
+        when(jwtUtils.generateRefreshToken(authentication)).thenReturn("refresh.jwt");
+
+        var tokens = authService.login(loginRequest);
+
+        assertNotNull(tokens);
+        assertEquals("access.jwt", tokens.jwtResponse().getToken());
+        assertEquals("refresh.jwt", tokens.refreshToken());
+        assertEquals(1L, tokens.jwtResponse().getId());
+        assertEquals("testuser", tokens.jwtResponse().getUsername());
 
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(jwtUtils).generateJwtToken(authentication);
+        verify(jwtUtils).generateAccessToken(authentication);
+        verify(jwtUtils).generateRefreshToken(authentication);
+    }
+
+    @Test
+    void logout_shouldRevokeAccessAndRefreshTokens() {
+        authService.logout("access.jwt", "refresh.jwt");
+
+        verify(jwtUtils).revokeToken("access.jwt");
+        verify(jwtUtils).revokeToken("refresh.jwt");
     }
 
     @Test
@@ -120,7 +149,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void signup_shouldThrowExceptionWhenUsernameExists() {
+    void signup_shouldUseGenericMessageWhenUsernameExists() {
         var signupRequest = new SignupRequest(
                 1L,
                 "Existing",
@@ -131,17 +160,20 @@ class AuthServiceTest {
         );
 
         when(userRepository.existsByUsernameIgnoreCase("existinguser")).thenReturn(true);
+        when(userRepository.existsByEmailIgnoreCase("existing@example.com")).thenReturn(false);
+        when(messageConfig.getMessage(anyString())).thenReturn("Credentials already in use");
 
-        assertThrows(ElementAlreadyExistsException.class, () -> authService.signup(signupRequest));
+        var ex = assertThrows(ElementAlreadyExistsException.class, () -> authService.signup(signupRequest));
 
+        assertEquals("Credentials already in use", ex.getMessage());
         verify(userRepository).existsByUsernameIgnoreCase("existinguser");
-        verify(userRepository, never()).existsByEmailIgnoreCase(anyString());
+        verify(userRepository).existsByEmailIgnoreCase("existing@example.com");
         verify(signupRequestMapper, never()).toUser(any());
         verify(userRepository, never()).save(any());
     }
 
     @Test
-    void signup_shouldThrowExceptionWhenEmailExists() {
+    void signup_shouldUseSameGenericMessageWhenEmailExists() {
         var signupRequest = new SignupRequest(
                 1L,
                 "New",
@@ -153,9 +185,11 @@ class AuthServiceTest {
 
         when(userRepository.existsByUsernameIgnoreCase("newuser")).thenReturn(false);
         when(userRepository.existsByEmailIgnoreCase("existing@example.com")).thenReturn(true);
+        when(messageConfig.getMessage(anyString())).thenReturn("Credentials already in use");
 
-        assertThrows(ElementAlreadyExistsException.class, () -> authService.signup(signupRequest));
+        var ex = assertThrows(ElementAlreadyExistsException.class, () -> authService.signup(signupRequest));
 
+        assertEquals("Credentials already in use", ex.getMessage());
         verify(userRepository).existsByUsernameIgnoreCase("newuser");
         verify(userRepository).existsByEmailIgnoreCase("existing@example.com");
         verify(signupRequestMapper, never()).toUser(any());

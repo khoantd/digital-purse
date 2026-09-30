@@ -19,6 +19,7 @@ public class ErrorResponse {
     private final int status;
     private final String message;
     private String stackTrace;
+    private String correlationId;
     private List<ValidationError> errors;
 
     private record ValidationError(String field, String message) {

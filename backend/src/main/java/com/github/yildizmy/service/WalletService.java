@@ -114,24 +114,26 @@ public class WalletService {
 
     /**
      * Creates a new wallet using the given request parameters.
+     * Owner is always the authenticated user (client userId is ignored).
      *
      * @param request
      * @return id of the created wallet
      */
     @Transactional
     public CommandResponse create(WalletRequest request) {
-        securityAccess.requireSelfOrAdmin(request.getUserId());
+        final Long ownerId = securityAccess.currentUser().getId();
+        request.setUserId(ownerId);
 
         if (walletRepository.existsByIbanIgnoreCase(request.getIban()))
             throw new ElementAlreadyExistsException(messageConfig.getMessage(ERROR_WALLET_IBAN_EXISTS));
-        if (walletRepository.existsByUserIdAndNameIgnoreCase(request.getUserId(), request.getName()))
+        if (walletRepository.existsByUserIdAndNameIgnoreCase(ownerId, request.getName()))
             throw new ElementAlreadyExistsException(messageConfig.getMessage(ERROR_WALLET_NAME_EXISTS));
 
         ibanValidator.isValid(request.getIban(), null);
 
         final Wallet wallet = walletRequestMapper.toWallet(request);
         walletRepository.save(wallet);
-        log.info(messageConfig.getMessage(INFO_WALLET_CREATED, wallet.getIban(), wallet.getName(), wallet.getBalance()));
+        log.info(messageConfig.getMessage(INFO_WALLET_CREATED, wallet.getId()));
 
         // add this initial amount to the transactions
         transactionService.create(walletTransactionRequestMapper.toTransactionRequest(request));
@@ -141,28 +143,26 @@ public class WalletService {
 
     /**
      * Transfer funds between wallets.
+     * Debit wallet is locked pessimistically to prevent double-spend races.
      *
      * @param request
      * @return id of the transaction
      */
     @Transactional
     public CommandResponse transferFunds(TransactionRequest request) {
+        final Wallet fromWallet = getByIbanForUpdate(request.getFromWalletIban());
         final Wallet toWallet = getByIban(request.getToWalletIban());
-        final Wallet fromWallet = getByIban(request.getFromWalletIban());
         securityAccess.requireWalletOwnerOrAdmin(fromWallet);
 
-        // check if the balance of sender wallet has equal or higher to/than transfer amount
         if (fromWallet.getBalance().compareTo(request.getAmount()) < 0)
             throw new InsufficientFundsException(messageConfig.getMessage(ERROR_INSUFFICIENT_FUNDS));
 
-        // update balance of the sender wallet
         fromWallet.setBalance(fromWallet.getBalance().subtract(request.getAmount()));
-
-        // update balance of the receiver wallet
         toWallet.setBalance(toWallet.getBalance().add(request.getAmount()));
 
+        walletRepository.save(fromWallet);
         walletRepository.save(toWallet);
-        log.info(messageConfig.getMessage(INFO_WALLET_BALANCES_UPDATED, fromWallet.getBalance(), toWallet.getBalance()));
+        log.info(messageConfig.getMessage(INFO_WALLET_BALANCES_UPDATED, fromWallet.getId(), toWallet.getId()));
 
         final CommandResponse response = transactionService.create(request);
         return CommandResponse.builder().id(response.id()).build();
@@ -176,14 +176,13 @@ public class WalletService {
      */
     @Transactional
     public CommandResponse addFunds(TransactionRequest request) {
-        final Wallet toWallet = getByIban(request.getToWalletIban());
+        final Wallet toWallet = getByIbanForUpdate(request.getToWalletIban());
         securityAccess.requireWalletOwnerOrAdmin(toWallet);
 
-        // update balance of the receiver wallet
         toWallet.setBalance(toWallet.getBalance().add(request.getAmount()));
 
         walletRepository.save(toWallet);
-        log.info(messageConfig.getMessage(INFO_WALLET_BALANCE_UPDATED, toWallet.getBalance()));
+        log.info(messageConfig.getMessage(INFO_WALLET_BALANCE_UPDATED, toWallet.getId()));
 
         final CommandResponse response = transactionService.create(request);
         return CommandResponse.builder().id(response.id()).build();
@@ -191,31 +190,30 @@ public class WalletService {
 
     /**
      * Withdraw funds from the given wallet.
+     * Debit wallet is locked pessimistically to prevent double-spend races.
      *
      * @param request
      * @return id of the transaction
      */
     @Transactional
     public CommandResponse withdrawFunds(TransactionRequest request) {
-        final Wallet fromWallet = getByIban(request.getFromWalletIban());
+        final Wallet fromWallet = getByIbanForUpdate(request.getFromWalletIban());
         securityAccess.requireWalletOwnerOrAdmin(fromWallet);
 
-        // check if the balance of sender wallet has equal or higher to/than transfer amount
         if (fromWallet.getBalance().compareTo(request.getAmount()) < 0)
             throw new InsufficientFundsException(messageConfig.getMessage(ERROR_INSUFFICIENT_FUNDS));
 
-        // update balance of the sender wallet
         fromWallet.setBalance(fromWallet.getBalance().subtract(request.getAmount()));
 
         walletRepository.save(fromWallet);
-        log.info(messageConfig.getMessage(INFO_WALLET_BALANCE_UPDATED, fromWallet.getBalance()));
+        log.info(messageConfig.getMessage(INFO_WALLET_BALANCE_UPDATED, fromWallet.getId()));
 
         final CommandResponse response = transactionService.create(request);
         return CommandResponse.builder().id(response.id()).build();
     }
 
     /**
-     * Updates wallet using the given request parameters.
+     * Updates wallet name/iban only. Balance, owner, and id are not client-controllable.
      *
      * @param request
      * @return id of the updated wallet
@@ -226,22 +224,31 @@ public class WalletService {
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
         securityAccess.requireWalletOwnerOrAdmin(foundWallet);
 
-        // check if the iban is changed and new iban is already exists
+        final Long ownerId = foundWallet.getUser().getId();
+
         if (!request.getIban().equalsIgnoreCase(foundWallet.getIban()) &&
                 walletRepository.existsByIbanIgnoreCase(request.getIban()))
             throw new ElementAlreadyExistsException(messageConfig.getMessage(ERROR_WALLET_IBAN_EXISTS));
 
-        // check if the name is changed and new name is already exists in user's wallets
         if (!request.getName().equalsIgnoreCase(foundWallet.getName()) &&
-                walletRepository.existsByUserIdAndNameIgnoreCase(request.getUserId(), request.getName()))
+                walletRepository.existsByUserIdAndNameIgnoreCase(ownerId, request.getName()))
             throw new ElementAlreadyExistsException(messageConfig.getMessage(ERROR_WALLET_NAME_EXISTS));
 
         ibanValidator.isValid(request.getIban(), null);
 
-        final Wallet wallet = walletRequestMapper.toWallet(request);
-        walletRepository.save(wallet);
-        log.info(messageConfig.getMessage(INFO_WALLET_UPDATED, wallet.getIban(), wallet.getName(), wallet.getBalance()));
+        foundWallet.setIban(org.apache.commons.lang3.StringUtils.upperCase(request.getIban()));
+        foundWallet.setName(org.apache.commons.text.WordUtils.capitalizeFully(request.getName()));
+        walletRepository.save(foundWallet);
+        log.info(messageConfig.getMessage(INFO_WALLET_UPDATED, foundWallet.getId()));
         return CommandResponse.builder().id(id).build();
+    }
+
+    /**
+     * Fetches a wallet by IBAN with a pessimistic write lock (must be called inside a transaction).
+     */
+    public Wallet getByIbanForUpdate(String iban) {
+        return walletRepository.findByIbanForUpdate(iban)
+                .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
     }
 
     /**
@@ -255,6 +262,6 @@ public class WalletService {
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
         securityAccess.requireWalletOwnerOrAdmin(wallet);
         walletRepository.delete(wallet);
-        log.info(messageConfig.getMessage(INFO_WALLET_DELETED, wallet.getIban(), wallet.getName(), wallet.getBalance()));
+        log.info(messageConfig.getMessage(INFO_WALLET_DELETED, wallet.getId()));
     }
 }

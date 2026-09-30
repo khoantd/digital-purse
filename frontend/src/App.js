@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import DashboardLayout from './layouts/dashboard/DashboardLayout';
 import Login from './pages/auth/Login';
@@ -11,8 +12,21 @@ import NewWallet from './pages/wallet/NewWallet';
 import Wallet from './pages/wallet/Wallet';
 import PrivateRoute from './PrivateRoute';
 import ProtectedRoute from './ProtectedRoute';
+import AuthService from './services/AuthService';
 
 export default function App() {
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    AuthService.refresh()
+      .catch(() => undefined)
+      .finally(() => setAuthReady(true));
+  }, []);
+
+  if (!authReady) {
+    return null;
+  }
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

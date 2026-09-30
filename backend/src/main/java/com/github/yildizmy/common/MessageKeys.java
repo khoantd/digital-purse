@@ -37,6 +37,8 @@ public final class MessageKeys {
     public static final String ERROR_ALREADY_EXISTS = "error.already.exists";
     public static final String ERROR_USERNAME_EXISTS = "error.username.exists";
     public static final String ERROR_EMAIL_EXISTS = "error.email.exists";
+    public static final String ERROR_CREDENTIALS_IN_USE = "error.credentials.in.use";
+    public static final String ERROR_TOO_MANY_REQUESTS = "error.too.many.requests";
     public static final String ERROR_WALLET_IBAN_EXISTS = "error.wallet.iban.exists";
     public static final String ERROR_WALLET_NAME_EXISTS = "error.wallet.name.exists";
     public static final String ERROR_NOT_FOUND = "error.not.found";
