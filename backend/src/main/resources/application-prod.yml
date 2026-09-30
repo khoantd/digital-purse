@@ -10,7 +10,7 @@ exception:
 
 logging:
   level:
-    com.github.yildizmy: info
+    com.ros.ewallet: info
     org.springframework: warn
     org.hibernate: error
     org.springframework.security: warn

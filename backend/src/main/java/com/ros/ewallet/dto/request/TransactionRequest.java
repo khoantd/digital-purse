@@ -1,0 +1,39 @@
+package com.ros.ewallet.dto.request;
+
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+
+/**
+ * Data Transfer Object for Transaction request.
+ * Server-controlled fields (id, status, referenceNumber, createdAt) are intentionally omitted.
+ */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class TransactionRequest {
+
+    @NotNull(message = "{validation.field.amount.required}")
+    @Positive(message = "{validation.field.amount.positive}")
+    @Digits(integer = 12, fraction = 2, message = "{validation.field.amount.digits}")
+    private BigDecimal amount;
+
+    @Size(max = 50, message = "{validation.field.description.length}")
+    private String description;
+
+    @NotBlank(message = "{validation.iban.sender.required}")
+    private String fromWalletIban;
+
+    @NotBlank(message = "{validation.iban.receiver.required}")
+    private String toWalletIban;
+
+    @NotNull(message = "{validation.field.type.required}")
+    private Long typeId;
+}

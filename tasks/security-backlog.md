@@ -16,10 +16,10 @@
 
 - [x] **SEC-01 — Privilege escalation via self-assigned roles on signup**
   - Severity: Critical
-  - Files: `backend/src/main/java/com/github/yildizmy/dto/request/SignupRequest.java:43`,
-    `backend/src/main/java/com/github/yildizmy/dto/mapper/SignupRequestMapper.java:48-52`,
-    `backend/src/main/java/com/github/yildizmy/domain/enums/RoleType.java:11`,
-    `backend/src/main/java/com/github/yildizmy/service/AuthService.java:75-85`
+  - Files: `backend/src/main/java/com/ros/ewallet/dto/request/SignupRequest.java:43`,
+    `backend/src/main/java/com/ros/ewallet/dto/mapper/SignupRequestMapper.java:48-52`,
+    `backend/src/main/java/com/ros/ewallet/domain/enums/RoleType.java:11`,
+    `backend/src/main/java/com/ros/ewallet/service/AuthService.java:75-85`
   - Problem: client sends `roles`; any value including `ROLE_ADMIN` is honored.
   - Fix: ignore client roles, hard-code `ROLE_USER` on signup; admin role assignment only via a separate admin-secured endpoint.
   - Accept: signup with `["ROLE_ADMIN"]` yields a `ROLE_USER`-only account (integration test).
@@ -27,8 +27,8 @@
 
 - [x] **SEC-02 — Missing ownership checks (IDOR) on wallet/transaction reads and writes**
   - Severity: Critical
-  - Files: `backend/src/main/java/com/github/yildizmy/service/WalletService.java:51-106,211-243`,
-    `backend/src/main/java/com/github/yildizmy/service/TransactionService.java:44-92`
+  - Files: `backend/src/main/java/com/ros/ewallet/service/WalletService.java:51-106,211-243`,
+    `backend/src/main/java/com/ros/ewallet/service/TransactionService.java:44-92`
   - Problem: any `ROLE_USER` can read/update/delete any wallet or transaction by id/IBAN/userId.
   - Fix: resolve caller from `SecurityContextHolder`; allow only owner (or admin). Scope list endpoints to the caller.
   - Accept: user A gets 403/404 for user B's wallet/transaction ids (tests for each endpoint).
@@ -36,7 +36,7 @@
 
 - [x] **SEC-03 — Any user can transfer/withdraw from any wallet**
   - Severity: Critical
-  - Files: `backend/src/main/java/com/github/yildizmy/service/WalletService.java:140-159,168-203`
+  - Files: `backend/src/main/java/com/ros/ewallet/service/WalletService.java:140-159,168-203`
   - Problem: `transferFunds`/`withdrawFunds`/`addFunds` never verify the caller owns `fromWallet`; funds-theft path by IBAN.
   - Fix: enforce debit-wallet ownership (owner or admin) before balance mutation. Depends on SEC-02 principal plumbing.
   - Accept: transferring from another user's wallet is rejected; own-wallet transfer still works (tests).
@@ -52,8 +52,8 @@
 
 - [x] **SEC-05 — No amount validation (ledger manipulation)**
   - Severity: Critical
-  - Files: `backend/src/main/java/com/github/yildizmy/dto/request/TransactionRequest.java:25-26`,
-    `backend/src/main/java/com/github/yildizmy/dto/request/WalletRequest.java:31-32`
+  - Files: `backend/src/main/java/com/ros/ewallet/dto/request/TransactionRequest.java:25-26`,
+    `backend/src/main/java/com/ros/ewallet/dto/request/WalletRequest.java:31-32`
   - Problem: `amount`/`balance` accept negative/zero → negative top-up withdraws, negative transfer reverses direction.
   - Fix: `@Positive` (or `@DecimalMin("0.01")`) + `@Digits` on both fields.
   - Accept: negative/zero amounts rejected with 422 (validation tests).
@@ -63,10 +63,10 @@
 
 - [x] **SEC-06 — Mass assignment of server-controlled fields**
   - Severity: High
-  - Files: `backend/src/main/java/com/github/yildizmy/dto/request/TransactionRequest.java`,
-    `backend/src/main/java/com/github/yildizmy/dto/mapper/TransactionRequestMapper.java`,
-    `backend/src/main/java/com/github/yildizmy/dto/request/WalletRequest.java`,
-    `backend/src/main/java/com/github/yildizmy/service/WalletService.java`
+  - Files: `backend/src/main/java/com/ros/ewallet/dto/request/TransactionRequest.java`,
+    `backend/src/main/java/com/ros/ewallet/dto/mapper/TransactionRequestMapper.java`,
+    `backend/src/main/java/com/ros/ewallet/dto/request/WalletRequest.java`,
+    `backend/src/main/java/com/ros/ewallet/service/WalletService.java`
   - Problem: client controls `id` (flows into `save()` → merge risk), `userId` (create wallet for another user), opening `balance`.
   - Fix: remove `id`/`status`/`referenceNumber`/`createdAt` from request DTOs (or `@Null` + mapper ignores); derive `userId` from auth principal.
   - Accept: server-generated fields ignore/forbid client values (mapper + API tests).
@@ -75,7 +75,7 @@
 - [x] **SEC-07 — JWT in `localStorage`, no revocation**
   - Severity: High
   - Files: `frontend/src/services/AuthService.js`, `frontend/src/services/AuthHeader.js`,
-    `backend/src/main/java/com/github/yildizmy/security/JwtUtils.java`
+    `backend/src/main/java/com/ros/ewallet/security/JwtUtils.java`
   - Problem: any XSS = full account takeover; 1h stateless token, no logout/blacklist.
   - Fix: short-lived access token in memory + rotating HttpOnly `Secure; SameSite=Strict` refresh cookie; server logout denylist.
   - Accept: token absent from `localStorage`; logout invalidates session (frontend + backend tests).
@@ -83,8 +83,8 @@
 
 - [x] **SEC-08 — No brute-force protection on auth endpoints**
   - Severity: High
-  - Files: `backend/src/main/java/com/github/yildizmy/controller/AuthController.java`,
-    `backend/src/main/java/com/github/yildizmy/security/AuthRateLimiter.java`
+  - Files: `backend/src/main/java/com/ros/ewallet/controller/AuthController.java`,
+    `backend/src/main/java/com/ros/ewallet/security/AuthRateLimiter.java`
   - Problem: unlimited `/login` + `/signup` attempts.
   - Fix: rate-limit (e.g. Bucket4j: 5 logins/min/IP + account lockout with backoff); log/alert spikes.
   - Accept: 6th rapid login attempt throttled (test with mocked limiter or integration test).
@@ -92,7 +92,7 @@
 
 - [x] **SEC-09 — User enumeration via signup/login messages**
   - Severity: High
-  - Files: `backend/src/main/java/com/github/yildizmy/service/AuthService.java`
+  - Files: `backend/src/main/java/com/ros/ewallet/service/AuthService.java`
   - Problem: distinct `USERNAME_EXISTS` vs `EMAIL_EXISTS` (and likely login) messages.
   - Fix: generic "credentials already in use / invalid credentials" responses; uniform timing.
   - Accept: enumeration probes return indistinguishable responses (tests).
@@ -100,8 +100,8 @@
 
 - [x] **SEC-10 — Race condition allows double-spend**
   - Severity: High
-  - Files: `backend/src/main/java/com/github/yildizmy/domain/entity/Wallet.java`,
-    `backend/src/main/java/com/github/yildizmy/service/WalletService.java`,
+  - Files: `backend/src/main/java/com/ros/ewallet/domain/entity/Wallet.java`,
+    `backend/src/main/java/com/ros/ewallet/service/WalletService.java`,
     `backend/src/main/resources/db/migration/V6__wallet_version.sql`
   - Problem: no `@Version`; concurrent transfers can both pass the balance check.
   - Fix: `@Version` optimistic locking on `Wallet` with retry, or pessimistic lock on debit wallet; add concurrent-transfer test.
@@ -114,7 +114,7 @@
   - Severity: Medium
   - Files: `backend/src/main/resources/application.yml`,
     `backend/src/main/resources/application-prod.yml`,
-    `backend/src/main/java/com/github/yildizmy/exception/GlobalExceptionHandler.java`
+    `backend/src/main/java/com/ros/ewallet/exception/GlobalExceptionHandler.java`
   - Problem: `include-message: always` + `include-stacktrace: on_param` + `exception.trace: true` expose internals on demand.
   - Fix: prod profile → `include-message: never` (or `on_param`), `include-stacktrace: never`, `exception.trace: false`; log server-side with correlation id.
   - Accept: prod error responses carry no stack/message internals (config + handler test).
@@ -122,7 +122,7 @@
 
 - [x] **SEC-12 — Missing security headers**
   - Severity: Medium
-  - Files: `backend/src/main/java/com/github/yildizmy/config/SecurityConfig.java`
+  - Files: `backend/src/main/java/com/ros/ewallet/config/SecurityConfig.java`
   - Problem: no HSTS/CSP/`X-Content-Type-Options`/frame options.
   - Fix: enable Spring Security header defaults + HSTS for prod; add CSP for the React frontend.
   - Accept: responses carry the header set (MockMvc header assertions).
@@ -130,9 +130,9 @@
 
 - [x] **SEC-13 — Weak password policy + password `.trim()`**
   - Severity: Medium
-  - Files: `backend/src/main/java/com/github/yildizmy/dto/request/SignupRequest.java`,
-    `backend/src/main/java/com/github/yildizmy/service/AuthService.java`,
-    `backend/src/main/java/com/github/yildizmy/validator/NotCommonPassword.java`
+  - Files: `backend/src/main/java/com/ros/ewallet/dto/request/SignupRequest.java`,
+    `backend/src/main/java/com/ros/ewallet/service/AuthService.java`,
+    `backend/src/main/java/com/ros/ewallet/validator/NotCommonPassword.java`
   - Problem: min 6 chars, no breach-list check; login `.trim()`s passwords, altering credentials.
   - Fix: min 10–12 chars (+ breach-list check); hash exactly what was sent.
   - Accept: short passwords rejected; password with spaces authenticates verbatim (tests).
@@ -140,9 +140,9 @@
 
 - [x] **SEC-14 — Sensitive data in logs**
   - Severity: Medium
-  - Files: `backend/src/main/java/com/github/yildizmy/service/WalletService.java`,
-    `backend/src/main/java/com/github/yildizmy/service/TransactionService.java`,
-    `backend/src/main/java/com/github/yildizmy/service/AuthService.java`,
+  - Files: `backend/src/main/java/com/ros/ewallet/service/WalletService.java`,
+    `backend/src/main/java/com/ros/ewallet/service/TransactionService.java`,
+    `backend/src/main/java/com/ros/ewallet/service/AuthService.java`,
     `backend/src/main/resources/messages.properties`
   - Problem: IBANs, balances, usernames at INFO into `./logs/application.log`.
   - Fix: drop/mask PII and balances in logs; use append-only audit table for money movement.
@@ -151,7 +151,7 @@
 
 - [x] **SEC-15 — CORS origin hard-coded, wildcard headers**
   - Severity: Medium
-  - Files: `backend/src/main/java/com/github/yildizmy/config/SecurityConfig.java`,
+  - Files: `backend/src/main/java/com/ros/ewallet/config/SecurityConfig.java`,
     `backend/src/main/resources/application.yml`, `.env.example`
   - Problem: `localhost:3000` baked in; `setAllowedHeaders("*")`.
   - Fix: externalize allowed origins per environment; enumerate required headers once cookies/credentials are used.

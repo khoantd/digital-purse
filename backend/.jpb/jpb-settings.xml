@@ -4,7 +4,7 @@
     <persistence-units>
       <persistence-unit name="Default" defaultSearchScope="Project">
         <packages>
-          <package value="com.github.yildizmy" />
+          <package value="com.ros.ewallet" />
         </packages>
       </persistence-unit>
     </persistence-units>

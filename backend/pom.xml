@@ -8,7 +8,7 @@
 		<version>4.1.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.github.yildizmy</groupId>
+	<groupId>com.ros.ewallet</groupId>
 	<artifactId>e-wallet</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>e-wallet</name>
