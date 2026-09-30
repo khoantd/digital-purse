@@ -1,0 +1,12 @@
+{
+  "accountMenu": "Account menu",
+  "home": "Home",
+  "profile": "Profile",
+  "settings": "Settings",
+  "logout": "Logout",
+  "organization": "Organization",
+  "transactionsQuota": "Transactions",
+  "quotaUsedUp": "Transaction quota used up",
+  "quotaRemaining": "{{count}} transactions remaining",
+  "quotaAria": "Transaction quota {{used}} / {{quota}}"
+}

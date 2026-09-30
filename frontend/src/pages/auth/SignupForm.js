@@ -3,6 +3,7 @@ import { IconButton, InputAdornment, Stack, TextField } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Iconify from '../../components/iconify';
 import AuthService from '../../services/AuthService';
 
@@ -19,6 +20,7 @@ export default function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const [formValues, setFormValues] = useState(defaultValues);
+  const { t } = useTranslation(['auth', 'common']);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -37,26 +39,25 @@ export default function SignupForm() {
     const { password } = formValues;
 
     if (firstName.length < 3 || firstName.length > 50) {
-      enqueueSnackbar('First name must be 3–50 characters', { variant: 'warning' });
+      enqueueSnackbar(t('auth:signup.firstNameLength'), { variant: 'warning' });
       return;
     }
     if (lastName.length < 3 || lastName.length > 50) {
-      enqueueSnackbar('Last name must be 3–50 characters', { variant: 'warning' });
+      enqueueSnackbar(t('auth:signup.lastNameLength'), { variant: 'warning' });
       return;
     }
     if (username.length < 3 || username.length > 20) {
-      enqueueSnackbar('Username must be 3–20 characters', { variant: 'warning' });
+      enqueueSnackbar(t('auth:signup.usernameLength'), { variant: 'warning' });
       return;
     }
     if (password.length < 12 || password.length > 100) {
-      enqueueSnackbar('Password must be 12–100 characters', { variant: 'warning' });
+      enqueueSnackbar(t('auth:signup.passwordLength'), { variant: 'warning' });
       return;
     }
 
-    // SignupRequest: no roles (SEC-01); password min 12 + common denylist (SEC-13)
     AuthService.signup({ firstName, lastName, username, email, password })
       .then(() => {
-        enqueueSnackbar('Signed up successfully', { variant: 'success' });
+        enqueueSnackbar(t('auth:signup.success'), { variant: 'success' });
         navigate('/login');
       })
       .catch((error) => {
@@ -75,7 +76,7 @@ export default function SignupForm() {
       <TextField
         id="firstName"
         name="firstName"
-        label="First name"
+        label={t('common:fields.firstName')}
         autoComplete="given-name"
         autoFocus
         required
@@ -86,7 +87,7 @@ export default function SignupForm() {
       <TextField
         id="lastName"
         name="lastName"
-        label="Last name"
+        label={t('common:fields.lastName')}
         autoComplete="family-name"
         required
         value={formValues.lastName}
@@ -96,7 +97,7 @@ export default function SignupForm() {
       <TextField
         id="username"
         name="username"
-        label="Username"
+        label={t('common:fields.username')}
         autoComplete="username"
         required
         value={formValues.username}
@@ -106,7 +107,7 @@ export default function SignupForm() {
       <TextField
         id="email"
         name="email"
-        label="Email"
+        label={t('auth:signup.email')}
         type="email"
         autoComplete="email"
         required
@@ -117,11 +118,11 @@ export default function SignupForm() {
       <TextField
         id="password"
         name="password"
-        label="Password"
+        label={t('common:fields.password')}
         autoComplete="new-password"
         type={showPassword ? 'text' : 'password'}
         required
-        helperText="At least 12 characters; avoid common passwords"
+        helperText={t('auth:signup.passwordHelper')}
         value={formValues.password}
         onChange={handleInputChange}
         inputProps={{ minLength: 12, maxLength: 100 }}
@@ -131,7 +132,7 @@ export default function SignupForm() {
               <IconButton
                 onClick={() => setShowPassword(!showPassword)}
                 edge="end"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? t('auth:login.hidePassword') : t('auth:login.showPassword')}
                 sx={{ cursor: 'pointer' }}
               >
                 <Iconify icon={showPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
@@ -141,7 +142,7 @@ export default function SignupForm() {
         }}
       />
       <LoadingButton fullWidth size="large" type="submit" variant="contained" sx={{ cursor: 'pointer' }}>
-        Create account
+        {t('auth:signup.submit')}
       </LoadingButton>
     </Stack>
   );

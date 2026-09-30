@@ -1,0 +1,51 @@
+{
+  "helmet": "Phê duyệt | Digital Purse",
+  "title": "Phê duyệt",
+  "subtitle": "Chi tiêu kiểm soát kép của tổ chức. Chuyển, rút và hoàn tác lớn chờ OWNER, ADMIN hoặc APPROVER khác xử lý tại đây.",
+  "stats": {
+    "pending": "Đang chờ",
+    "approved": "Đã duyệt",
+    "rejected": "Đã từ chối",
+    "awaiting": "Chờ xử lý",
+    "needsDualControl": "Cần kiểm soát kép",
+    "pendingCountOne": "1 phê duyệt đang chờ",
+    "pendingCountMany": "{{count}} phê duyệt đang chờ"
+  },
+  "filters": {
+    "statusAll": "Tất cả trạng thái",
+    "pending": "Đang chờ",
+    "approved": "Đã duyệt",
+    "rejected": "Đã từ chối",
+    "operationAll": "Tất cả thao tác"
+  },
+  "operations": {
+    "transfer": "Chuyển khoản",
+    "withdraw": "Rút tiền",
+    "reverse": "Hoàn tác"
+  },
+  "table": {
+    "fromTo": "Từ → Đến",
+    "requester": "Người yêu cầu",
+    "when": "Thời gian",
+    "actions": "Thao tác",
+    "sourceTx": "Giao dịch nguồn #{{id}}"
+  },
+  "empty": {
+    "none": "Chưa có yêu cầu chi",
+    "noneDescription": "Khi chuyển, rút hoặc hoàn tác cần phê duyệt kiểm soát kép, yêu cầu sẽ hiện tại đây.",
+    "noMatch": "Không có phê duyệt phù hợp bộ lọc",
+    "noMatchDescription": "Thử đổi trạng thái, thao tác hoặc khoảng ngày, hoặc xóa bộ lọc phía trên."
+  },
+  "pagination": {
+    "rowsPerPage": "Phê duyệt mỗi trang"
+  },
+  "actions": {
+    "working": "Đang xử lý…"
+  },
+  "snackbar": {
+    "approved": "Đã phê duyệt yêu cầu chi",
+    "approveFailed": "Phê duyệt thất bại",
+    "rejected": "Đã từ chối yêu cầu chi",
+    "rejectFailed": "Từ chối thất bại"
+  }
+}

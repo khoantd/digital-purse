@@ -1,0 +1,17 @@
+{
+  "suffix": "Digital Purse",
+  "home": "Home",
+  "login": "Log in",
+  "signup": "Sign up",
+  "unauthorized": "Unauthorized",
+  "wallets": "Wallets",
+  "newWallet": "New wallet",
+  "receive": "Receive",
+  "transfers": "Transfers",
+  "transactions": "Transactions",
+  "customers": "Customers",
+  "approvals": "Approvals",
+  "activity": "Activity",
+  "settings": "Settings",
+  "profile": "Profile"
+}

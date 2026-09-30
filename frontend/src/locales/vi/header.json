@@ -1,0 +1,12 @@
+{
+  "accountMenu": "Menu tài khoản",
+  "home": "Trang chủ",
+  "profile": "Hồ sơ",
+  "settings": "Cài đặt",
+  "logout": "Đăng xuất",
+  "organization": "Tổ chức",
+  "transactionsQuota": "Giao dịch",
+  "quotaUsedUp": "Đã dùng hết hạn mức giao dịch",
+  "quotaRemaining": "Còn {{count}} giao dịch",
+  "quotaAria": "Hạn mức giao dịch {{used}} / {{quota}}"
+}

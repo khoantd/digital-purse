@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import OrganizationContext from '../../../services/OrganizationContext';
 import { ensureActiveOrganization } from '../../../services/ensureOrganization';
 
@@ -8,6 +9,7 @@ import { ensureActiveOrganization } from '../../../services/ensureOrganization';
  */
 export default function OrgSwitcher() {
   const [orgs, setOrgs] = useState([]);
+  const { t } = useTranslation('header');
   const [value, setValue] = useState(() => {
     const id = OrganizationContext.getActiveOrganizationId();
     return id != null ? String(id) : '';
@@ -34,15 +36,12 @@ export default function OrgSwitcher() {
     return null;
   }
 
+  const orgLabel = t('organization');
+
   return (
     <FormControl size="small" sx={{ minWidth: 180 }}>
-      <InputLabel id="org-switcher-label">Organization</InputLabel>
-      <Select
-        labelId="org-switcher-label"
-        label="Organization"
-        value={value}
-        onChange={handleChange}
-      >
+      <InputLabel id="org-switcher-label">{orgLabel}</InputLabel>
+      <Select labelId="org-switcher-label" label={orgLabel} value={value} onChange={handleChange}>
         {orgs.map((org) => (
           <MenuItem key={org.id} value={String(org.id)}>
             {org.name}

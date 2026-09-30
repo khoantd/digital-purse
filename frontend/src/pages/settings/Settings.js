@@ -27,6 +27,7 @@ import {
 import { LoadingButton } from '@mui/lab';
 import { enqueueSnackbar } from 'notistack';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Iconify from '../../components/iconify';
@@ -35,13 +36,10 @@ import Scrollbar from '../../components/scrollbar';
 import { EmptyState } from '../../components/wallet-ui';
 import HttpService from '../../services/HttpService';
 import OrganizationContext from '../../services/OrganizationContext';
-import { fCurrency } from '../../utils/formatNumber';
+import { fCurrency, fNumber } from '../../utils/formatNumber';
+import ProfilePanel from './ProfilePanel';
 
-const ASSIGNABLE_ROLES = [
-  { value: 'ADMIN', label: 'Admin', hint: 'Manage members, wallets, and approvals' },
-  { value: 'ACCOUNTANT', label: 'Accountant', hint: 'Day-to-day top-up, transfer, withdraw' },
-  { value: 'APPROVER', label: 'Approver', hint: 'Approve or reject large spends only' },
-];
+const ASSIGNABLE_ROLE_VALUES = ['ADMIN', 'ACCOUNTANT', 'APPROVER'];
 
 const ROLE_COLOR = {
   OWNER: 'warning',
@@ -60,17 +58,20 @@ function TabPanel({ children, value, index }) {
 }
 
 export default function Settings() {
+  const { t } = useTranslation(['settings', 'common']);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromQuery = searchParams.get('tab');
   const initialTab =
     tabFromQuery === 'subscription'
-      ? 3
+      ? 4
       : tabFromQuery === 'controls'
-        ? 2
+        ? 3
         : tabFromQuery === 'members'
-          ? 1
-          : 0;
+          ? 2
+          : tabFromQuery === 'general'
+            ? 1
+            : 0;
   const [tab, setTab] = useState(initialTab);
   const [org, setOrg] = useState(null);
   const [members, setMembers] = useState([]);
@@ -102,18 +103,55 @@ export default function Settings() {
   const orgId = OrganizationContext.getActiveOrganizationId();
   const manage = canManageMembers(org?.myRole);
 
+  const assignableRoles = useMemo(
+    () =>
+      ASSIGNABLE_ROLE_VALUES.map((value) => ({
+        value,
+        label: t(`members.roles.${value.toLowerCase()}`),
+        hint: t(`members.roles.${value.toLowerCase()}Hint`),
+      })),
+    [t]
+  );
+
+  const limitFields = useMemo(
+    () => [
+      {
+        key: 'perTransactionMax',
+        title: t('controls.perTransactionTitle'),
+        description: t('controls.perTransactionDescription'),
+      },
+      {
+        key: 'dailyOutboundMax',
+        title: t('controls.dailyOutboundTitle'),
+        description: t('controls.dailyOutboundDescription'),
+      },
+      {
+        key: 'dailyTopUpMax',
+        title: t('controls.dailyTopUpTitle'),
+        description: t('controls.dailyTopUpDescription'),
+      },
+      {
+        key: 'dualControlThreshold',
+        title: t('controls.dualControlTitle'),
+        description: t('controls.dualControlDescription'),
+      },
+    ],
+    [t]
+  );
+
   useEffect(() => {
-    if (tabFromQuery === 'subscription') setTab(3);
-    else if (tabFromQuery === 'controls') setTab(2);
-    else if (tabFromQuery === 'members') setTab(1);
-    else if (tabFromQuery === 'general') setTab(0);
+    if (tabFromQuery === 'subscription') setTab(4);
+    else if (tabFromQuery === 'controls') setTab(3);
+    else if (tabFromQuery === 'members') setTab(2);
+    else if (tabFromQuery === 'general') setTab(1);
+    else if (tabFromQuery === 'profile' || !tabFromQuery) setTab(0);
   }, [tabFromQuery]);
 
   const load = useCallback(() => {
     const id = OrganizationContext.getActiveOrganizationId();
     if (id == null) {
       setLoading(false);
-      enqueueSnackbar('Select an organization first', { variant: 'warning' });
+      enqueueSnackbar(t('messages.selectOrg'), { variant: 'warning' });
       return;
     }
     setLoading(true);
@@ -143,7 +181,7 @@ export default function Settings() {
         if (error?.response?.status === 401) {
           navigate('/login');
         } else {
-          enqueueSnackbar(error.response?.data?.message || 'Failed to load settings', { variant: 'error' });
+          enqueueSnackbar(error.response?.data?.message || t('messages.loadFailed'), { variant: 'error' });
         }
       })
       .finally(() => setLoading(false));
@@ -177,7 +215,7 @@ export default function Settings() {
     event.preventDefault();
     const name = orgForm.name.trim();
     if (name.length < 2) {
-      enqueueSnackbar('Name must be at least 2 characters', { variant: 'warning' });
+      enqueueSnackbar(t('snackbar.orgNameMinLength'), { variant: 'warning' });
       return;
     }
     setSavingOrg(true);
@@ -186,12 +224,12 @@ export default function Settings() {
       taxId: orgForm.taxId.trim() || null,
     })
       .then(() => {
-        enqueueSnackbar('Organization updated', { variant: 'success' });
+        enqueueSnackbar(t('snackbar.organizationUpdated'), { variant: 'success' });
         load();
         window.dispatchEvent(new Event('organization-changed'));
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Update failed', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('snackbar.orgUpdateFailed'), { variant: 'error' });
       })
       .finally(() => setSavingOrg(false));
   };
@@ -199,7 +237,7 @@ export default function Settings() {
   const parseVndAmount = (raw, label) => {
     const trimmed = String(raw ?? '').trim().replace(/,/g, '');
     if (!/^\d+$/.test(trimmed) || trimmed === '0') {
-      enqueueSnackbar(`${label} must be a whole VND amount of at least 1`, { variant: 'warning' });
+      enqueueSnackbar(t('snackbar.vndAmountInvalid', { label }), { variant: 'warning' });
       return null;
     }
     return trimmed;
@@ -207,17 +245,17 @@ export default function Settings() {
 
   const saveLimits = (event) => {
     event.preventDefault();
-    const perTransactionMax = parseVndAmount(limitsForm.perTransactionMax, 'Per transaction');
+    const perTransactionMax = parseVndAmount(limitsForm.perTransactionMax, t('controls.perTransactionTitle'));
     if (perTransactionMax == null) return;
-    const dailyOutboundMax = parseVndAmount(limitsForm.dailyOutboundMax, 'Daily outbound');
+    const dailyOutboundMax = parseVndAmount(limitsForm.dailyOutboundMax, t('controls.dailyOutboundTitle'));
     if (dailyOutboundMax == null) return;
-    const dailyTopUpMax = parseVndAmount(limitsForm.dailyTopUpMax, 'Daily top-up');
+    const dailyTopUpMax = parseVndAmount(limitsForm.dailyTopUpMax, t('controls.dailyTopUpTitle'));
     if (dailyTopUpMax == null) return;
-    const dualControlThreshold = parseVndAmount(limitsForm.dualControlThreshold, 'Dual-control threshold');
+    const dualControlThreshold = parseVndAmount(limitsForm.dualControlThreshold, t('controls.dualControlTitle'));
     if (dualControlThreshold == null) return;
 
     if (Number(dualControlThreshold) > Number(perTransactionMax)) {
-      enqueueSnackbar('Dual-control threshold cannot exceed per-transaction maximum', { variant: 'warning' });
+      enqueueSnackbar(t('snackbar.dualControlExceedsMax'), { variant: 'warning' });
       return;
     }
 
@@ -229,11 +267,11 @@ export default function Settings() {
       dualControlThreshold,
     })
       .then(() => {
-        enqueueSnackbar('Spending controls updated', { variant: 'success' });
+        enqueueSnackbar(t('snackbar.spendingControlsUpdated'), { variant: 'success' });
         load();
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Could not update controls', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('snackbar.controlsUpdateFailed'), { variant: 'error' });
       })
       .finally(() => setSavingLimits(false));
   };
@@ -247,7 +285,7 @@ export default function Settings() {
     event.preventDefault();
     const username = addForm.username.trim();
     if (username.length < 3) {
-      enqueueSnackbar('Username must be at least 3 characters', { variant: 'warning' });
+      enqueueSnackbar(t('snackbar.usernameMinLength'), { variant: 'warning' });
       return;
     }
     setSubmitting(true);
@@ -256,12 +294,12 @@ export default function Settings() {
       role: addForm.role,
     })
       .then(() => {
-        enqueueSnackbar('Member added', { variant: 'success' });
+        enqueueSnackbar(t('snackbar.memberAdded'), { variant: 'success' });
         setAddOpen(false);
         load();
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Could not add member', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('snackbar.memberAddFailed'), { variant: 'error' });
       })
       .finally(() => setSubmitting(false));
   };
@@ -289,28 +327,28 @@ export default function Settings() {
     setSubmitting(true);
     HttpService.putWithAuth(`/organizations/${orgId}/members/${roleTarget.id}`, { role: roleValue })
       .then(() => {
-        enqueueSnackbar('Role updated', { variant: 'success' });
+        enqueueSnackbar(t('snackbar.roleUpdated'), { variant: 'success' });
         setRoleDialogOpen(false);
         load();
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Role update failed', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('snackbar.roleUpdateFailed'), { variant: 'error' });
       })
       .finally(() => setSubmitting(false));
   };
 
   const removeMember = (member) => {
     closeMenu();
-    if (!window.confirm(`Remove ${member.username} from this organization?`)) {
+    if (!window.confirm(t('members.confirmRemove', { username: member.username }))) {
       return;
     }
     HttpService.deleteWithAuth(`/organizations/${orgId}/members/${member.id}`)
       .then(() => {
-        enqueueSnackbar('Member removed', { variant: 'success' });
+        enqueueSnackbar(t('snackbar.memberRemoved'), { variant: 'success' });
         load();
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Remove failed', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('snackbar.removeFailed'), { variant: 'error' });
       });
   };
 
@@ -322,13 +360,13 @@ export default function Settings() {
   return (
     <>
       <Helmet>
-        <title> Settings | Digital Purse </title>
+        <title>{t('helmet')}</title>
       </Helmet>
       <Container sx={{ minWidth: '100%' }}>
         <Stack spacing={0.5} mb={3}>
-          <Typography variant="h4">Settings</Typography>
+          <Typography variant="h4">{t('title')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage your organization, team roles, and spending controls for the active business.
+            {t('subtitle')}
           </Typography>
         </Stack>
 
@@ -336,29 +374,34 @@ export default function Settings() {
           value={tab}
           onChange={(_, next) => {
             setTab(next);
-            const names = ['general', 'members', 'controls', 'subscription'];
-            setSearchParams(next === 0 ? {} : { tab: names[next] }, { replace: true });
+            const names = ['profile', 'general', 'members', 'controls', 'subscription'];
+            setSearchParams(next === 0 ? { tab: 'profile' } : { tab: names[next] }, { replace: true });
           }}
           sx={{ borderBottom: 1, borderColor: 'divider', mb: 0 }}
         >
-          <Tab label="General" sx={{ cursor: 'pointer' }} />
-          <Tab label="Members" sx={{ cursor: 'pointer' }} />
-          <Tab label="Controls" sx={{ cursor: 'pointer' }} />
-          <Tab label="Subscription" sx={{ cursor: 'pointer' }} />
+          <Tab label={t('tabs.profile')} sx={{ cursor: 'pointer' }} />
+          <Tab label={t('tabs.general')} sx={{ cursor: 'pointer' }} />
+          <Tab label={t('tabs.members')} sx={{ cursor: 'pointer' }} />
+          <Tab label={t('tabs.controls')} sx={{ cursor: 'pointer' }} />
+          <Tab label={t('tabs.subscription')} sx={{ cursor: 'pointer' }} />
         </Tabs>
 
         <TabPanel value={tab} index={0}>
+          <ProfilePanel />
+        </TabPanel>
+
+        <TabPanel value={tab} index={1}>
           <Card sx={{ maxWidth: 560 }}>
             <CardContent>
               <Stack component="form" onSubmit={saveOrganization} spacing={2.5} noValidate>
                 <Stack spacing={0.5}>
-                  <Typography variant="h6">Organization</Typography>
+                  <Typography variant="h6">{t('general.sectionTitle')}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Name and tax ID shown across wallets and reports for this business.
+                    {t('general.sectionDescription')}
                   </Typography>
                 </Stack>
                 <TextField
-                  label="Organization name"
+                  label={t('general.orgName')}
                   value={orgForm.name}
                   onChange={(e) => setOrgForm((prev) => ({ ...prev, name: e.target.value }))}
                   required
@@ -366,27 +409,27 @@ export default function Settings() {
                   inputProps={{ maxLength: 100 }}
                 />
                 <TextField
-                  label="Tax ID"
+                  label={t('general.taxId')}
                   value={orgForm.taxId}
                   onChange={(e) => setOrgForm((prev) => ({ ...prev, taxId: e.target.value }))}
                   disabled={!manage || loading}
                   inputProps={{ maxLength: 20 }}
-                  helperText="Optional business tax / MST number"
+                  helperText={t('general.taxIdHelper')}
                 />
                 <TextField
-                  label="Organization ID"
+                  label={t('general.orgId')}
                   value={org?.id ?? ''}
                   InputProps={{ readOnly: true }}
                   disabled
                 />
                 <TextField
-                  label="Status"
+                  label={t('general.status')}
                   value={org?.status ?? ''}
                   InputProps={{ readOnly: true }}
                   disabled
                 />
                 <TextField
-                  label="Your role"
+                  label={t('general.yourRole')}
                   value={org?.myRole ?? ''}
                   InputProps={{ readOnly: true }}
                   disabled
@@ -398,11 +441,11 @@ export default function Settings() {
                     loading={savingOrg}
                     sx={{ alignSelf: 'flex-start', cursor: 'pointer' }}
                   >
-                    Save changes
+                    {t('general.save')}
                   </LoadingButton>
                 ) : (
                   <Typography variant="caption" color="text.secondary">
-                    Only owners and admins can edit organization details.
+                    {t('general.readOnly')}
                   </Typography>
                 )}
               </Stack>
@@ -410,7 +453,7 @@ export default function Settings() {
           </Card>
         </TabPanel>
 
-        <TabPanel value={tab} index={1}>
+        <TabPanel value={tab} index={2}>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             alignItems={{ sm: 'center' }}
@@ -425,11 +468,18 @@ export default function Settings() {
           >
             <Stack spacing={0.5}>
               <Typography variant="subtitle1">
-                {org?.name || 'Organization'} · {members.length} member{members.length === 1 ? '' : 's'}
+                {t('members.summary', {
+                  orgName: org?.name || t('general.sectionTitle'),
+                  count: members.length,
+                })}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {roleCounts.OWNER} owner · {roleCounts.ADMIN} admin · {roleCounts.ACCOUNTANT} accountant ·{' '}
-                {roleCounts.APPROVER} approver
+                {t('members.roleBreakdown', {
+                  owners: roleCounts.OWNER,
+                  admins: roleCounts.ADMIN,
+                  accountants: roleCounts.ACCOUNTANT,
+                  approvers: roleCounts.APPROVER,
+                })}
               </Typography>
             </Stack>
             {manage && (
@@ -439,7 +489,7 @@ export default function Settings() {
                 onClick={openAdd}
                 sx={{ cursor: 'pointer', flexShrink: 0 }}
               >
-                Add member
+                {t('members.addMember')}
               </Button>
             )}
           </Stack>
@@ -447,7 +497,7 @@ export default function Settings() {
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={2}>
             <TextField
               size="small"
-              placeholder="Search members…"
+              placeholder={t('members.searchPlaceholder')}
               value={memberQuery}
               onChange={(e) => setMemberQuery(e.target.value)}
               sx={{ maxWidth: 320 }}
@@ -460,9 +510,9 @@ export default function Settings() {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Member</TableCell>
-                      <TableCell>Username</TableCell>
-                      <TableCell>Role</TableCell>
+                      <TableCell>{t('members.memberColumn')}</TableCell>
+                      <TableCell>{t('members.usernameColumn')}</TableCell>
+                      <TableCell>{t('members.roleColumn')}</TableCell>
                       {manage && <TableCell align="right" />}
                     </TableRow>
                   </TableHead>
@@ -471,13 +521,11 @@ export default function Settings() {
                       <TableRow>
                         <TableCell colSpan={manage ? 4 : 3} sx={{ py: 6 }}>
                           <EmptyState
-                            title="No members found"
+                            title={t('members.empty')}
                             description={
-                              manage
-                                ? 'Add a teammate by their Digital Purse username.'
-                                : 'Ask an owner or admin to invite teammates.'
+                              manage ? t('members.emptyDescriptionManage') : t('members.emptyDescriptionReadOnly')
                             }
-                            actionLabel={manage ? 'Add member' : undefined}
+                            actionLabel={manage ? t('members.addMember') : undefined}
                             onAction={manage ? openAdd : undefined}
                           />
                         </TableCell>
@@ -508,39 +556,17 @@ export default function Settings() {
           </Card>
         </TabPanel>
 
-        <TabPanel value={tab} index={2}>
+        <TabPanel value={tab} index={3}>
           <Card sx={{ maxWidth: 640 }}>
             <CardContent>
               <Stack component="form" onSubmit={saveLimits} spacing={2.5} noValidate>
                 <Stack spacing={0.5}>
-                  <Typography variant="h6">Spending controls</Typography>
+                  <Typography variant="h6">{t('controls.sectionTitle')}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Limits for this organization (VND). Dual-control applies when transfer or withdraw is at or above
-                    the threshold.
+                    {t('controls.sectionDescription')}
                   </Typography>
                 </Stack>
-                {[
-                  {
-                    key: 'perTransactionMax',
-                    title: 'Per transaction',
-                    description: 'Max amount for a single top-up, transfer, or withdraw.',
-                  },
-                  {
-                    key: 'dailyOutboundMax',
-                    title: 'Daily outbound',
-                    description: 'Max sum of transfers and withdraws per day.',
-                  },
-                  {
-                    key: 'dailyTopUpMax',
-                    title: 'Daily top-up',
-                    description: 'Max sum of top-ups into org wallets per day.',
-                  },
-                  {
-                    key: 'dualControlThreshold',
-                    title: 'Dual-control threshold',
-                    description: 'At or above this amount, a second approver must approve.',
-                  },
-                ].map((item) => (
+                {limitFields.map((item) => (
                   <TextField
                     key={item.key}
                     label={item.title}
@@ -552,7 +578,10 @@ export default function Settings() {
                     inputProps={{ inputMode: 'numeric', maxLength: 19 }}
                     helperText={
                       limitsForm[item.key]
-                        ? `${item.description} (${fCurrency(limitsForm[item.key])})`
+                        ? t('controls.helperWithAmount', {
+                            description: item.description,
+                            amount: fCurrency(limitsForm[item.key]),
+                          })
                         : item.description
                     }
                   />
@@ -564,11 +593,11 @@ export default function Settings() {
                     loading={savingLimits}
                     sx={{ alignSelf: 'flex-start', cursor: 'pointer' }}
                   >
-                    Save controls
+                    {t('controls.save')}
                   </LoadingButton>
                 ) : (
                   <Typography variant="caption" color="text.secondary">
-                    Only owners and admins can change spending controls.
+                    {t('controls.readOnly')}
                   </Typography>
                 )}
               </Stack>
@@ -576,25 +605,23 @@ export default function Settings() {
           </Card>
         </TabPanel>
 
-        <TabPanel value={tab} index={3}>
+        <TabPanel value={tab} index={4}>
           <Card sx={{ maxWidth: 560 }}>
             <CardContent>
               <Stack spacing={2.5}>
                 <Stack spacing={0.5}>
-                  <Typography variant="h6">Transaction subscription</Typography>
+                  <Typography variant="h6">{t('subscription.sectionTitle')}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Lifetime allotment of money movements (transfer, withdraw, top-up) for this organization. New
-                    organizations start with 1,000 transactions.
+                    {t('subscription.sectionDescription')}
                   </Typography>
                 </Stack>
                 <Stack spacing={1}>
                   <Stack direction="row" justifyContent="space-between" alignItems="baseline">
                     <Typography variant="body2" color="text.secondary">
-                      Used
+                      {t('subscription.used')}
                     </Typography>
                     <Typography variant="subtitle1">
-                      {subscription.transactionUsed.toLocaleString()} /{' '}
-                      {subscription.transactionQuota.toLocaleString()}
+                      {fNumber(subscription.transactionUsed)} / {fNumber(subscription.transactionQuota)}
                     </Typography>
                   </Stack>
                   <LinearProgress
@@ -612,8 +639,8 @@ export default function Settings() {
                   />
                   <Typography variant="body2" color="text.secondary">
                     {subscription.remaining <= 0
-                      ? 'Quota used up — transfer, withdraw, and top-up are blocked until a platform admin raises the allotment.'
-                      : `${subscription.remaining.toLocaleString()} transactions remaining`}
+                      ? t('subscription.quotaExhausted')
+                      : t('subscription.remaining', { count: subscription.remaining })}
                   </Typography>
                 </Stack>
               </Stack>
@@ -631,36 +658,36 @@ export default function Settings() {
       >
         <MenuItem onClick={() => openChangeRole(menuMember)} sx={{ cursor: 'pointer' }}>
           <Iconify icon="eva:shield-fill" sx={{ mr: 2 }} />
-          Change role
+          {t('common:actions.changeRole')}
         </MenuItem>
         <MenuItem
           onClick={() => removeMember(menuMember)}
           sx={{ color: 'error.main', cursor: 'pointer' }}
         >
           <Iconify icon="eva:person-remove-fill" sx={{ mr: 2 }} />
-          Remove
+          {t('common:actions.remove')}
         </MenuItem>
       </Popover>
 
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Add member</DialogTitle>
+        <DialogTitle>{t('members.addTitle')}</DialogTitle>
         <DialogContent>
           <Stack component="form" id="add-member-form" onSubmit={submitAdd} spacing={2} sx={{ pt: 1 }} noValidate>
             <TextField
-              label="Username"
+              label={t('common:fields.username')}
               value={addForm.username}
               onChange={(e) => setAddForm((prev) => ({ ...prev, username: e.target.value }))}
               required
-              helperText="Existing Digital Purse username"
+              helperText={t('members.usernameHelper')}
               inputProps={{ maxLength: 20 }}
             />
             <TextField
               select
-              label="Role"
+              label={t('members.role')}
               value={addForm.role}
               onChange={(e) => setAddForm((prev) => ({ ...prev, role: e.target.value }))}
             >
-              {ASSIGNABLE_ROLES.map((r) => (
+              {assignableRoles.map((r) => (
                 <MenuItem key={r.value} value={r.value}>
                   <Stack>
                     <Typography variant="body2">{r.label}</Typography>
@@ -675,7 +702,7 @@ export default function Settings() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAddOpen(false)} sx={{ cursor: 'pointer' }}>
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
           <LoadingButton
             type="submit"
@@ -684,13 +711,13 @@ export default function Settings() {
             loading={submitting}
             sx={{ cursor: 'pointer' }}
           >
-            Add
+            {t('common:actions.add')}
           </LoadingButton>
         </DialogActions>
       </Dialog>
 
       <Dialog open={roleDialogOpen} onClose={() => setRoleDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Change role</DialogTitle>
+        <DialogTitle>{t('members.changeRoleTitle')}</DialogTitle>
         <DialogContent>
           <Stack component="form" id="role-form" onSubmit={submitRoleChange} spacing={2} sx={{ pt: 1 }} noValidate>
             <Typography variant="body2" color="text.secondary">
@@ -698,11 +725,11 @@ export default function Settings() {
             </Typography>
             <TextField
               select
-              label="Role"
+              label={t('members.role')}
               value={roleValue}
               onChange={(e) => setRoleValue(e.target.value)}
             >
-              {ASSIGNABLE_ROLES.map((r) => (
+              {assignableRoles.map((r) => (
                 <MenuItem key={r.value} value={r.value}>
                   <Stack>
                     <Typography variant="body2">{r.label}</Typography>
@@ -715,14 +742,14 @@ export default function Settings() {
             </TextField>
             {roleTarget?.role === 'OWNER' && (
               <Typography variant="caption" color="warning.main">
-                Demoting an owner is only allowed when another owner remains in the organization.
+                {t('members.ownerDemoteHint')}
               </Typography>
             )}
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRoleDialogOpen(false)} sx={{ cursor: 'pointer' }}>
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
           <LoadingButton
             type="submit"
@@ -731,7 +758,7 @@ export default function Settings() {
             loading={submitting}
             sx={{ cursor: 'pointer' }}
           >
-            Save
+            {t('common:actions.save')}
           </LoadingButton>
         </DialogActions>
       </Dialog>

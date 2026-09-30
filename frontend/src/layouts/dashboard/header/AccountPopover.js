@@ -1,30 +1,50 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 import { Avatar, Box, Divider, IconButton, MenuItem, Popover, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import AuthService from '../../../services/AuthService';
-import account from '../../../_mock/account';
 
-const MENU_OPTIONS = [
-  {
-    label: 'Home',
-    icon: 'eva:home-fill',
-    path: '/',
-  },
-  {
-    label: 'Settings',
-    icon: 'eva:settings-2-fill',
-    path: '/settings',
-  },
-];
+function initialsFrom(user) {
+  const a = (user?.firstName || '').trim().charAt(0);
+  const b = (user?.lastName || '').trim().charAt(0);
+  const fallback = (user?.username || '?').trim().charAt(0);
+  return `${a}${b}`.toUpperCase() || fallback.toUpperCase();
+}
 
 export default function AccountPopover() {
   const [open, setOpen] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => AuthService.getCurrentUser());
   const navigate = useNavigate();
-  const currentUser = AuthService.getCurrentUser();
+  const { t } = useTranslation('header');
+
+  const menuOptions = useMemo(
+    () => [
+      {
+        labelKey: 'home',
+        path: '/',
+      },
+      {
+        labelKey: 'profile',
+        path: '/settings?tab=profile',
+      },
+      {
+        labelKey: 'settings',
+        path: '/settings?tab=general',
+      },
+    ],
+    []
+  );
+
+  useEffect(() => {
+    const sync = () => setCurrentUser(AuthService.getCurrentUser());
+    window.addEventListener('profile-updated', sync);
+    return () => window.removeEventListener('profile-updated', sync);
+  }, []);
 
   const handleOpen = (event) => {
+    setCurrentUser(AuthService.getCurrentUser());
     setOpen(event.currentTarget);
   };
 
@@ -43,12 +63,16 @@ export default function AccountPopover() {
     AuthService.logout().finally(() => navigate('/login'));
   };
 
+  const displayName = [currentUser?.firstName, currentUser?.lastName].filter(Boolean).join(' ') || currentUser?.username;
+
   return (
     <>
       <IconButton
         onClick={handleOpen}
+        aria-label={t('accountMenu')}
         sx={{
           p: 0,
+          cursor: 'pointer',
           ...(open && {
             '&:before': {
               zIndex: 1,
@@ -62,7 +86,17 @@ export default function AccountPopover() {
           }),
         }}
       >
-        <Avatar src={account.photoURL} alt="photoURL" />
+        <Avatar
+          sx={{
+            bgcolor: 'primary.main',
+            width: 40,
+            height: 40,
+            fontSize: 14,
+            fontWeight: 600,
+          }}
+        >
+          {initialsFrom(currentUser)}
+        </Avatar>
       </IconButton>
       <Popover
         open={Boolean(open)}
@@ -75,7 +109,7 @@ export default function AccountPopover() {
             p: 0,
             mt: 1.5,
             ml: 0.75,
-            width: 180,
+            width: 220,
             '& .MuiMenuItem-root': {
               typography: 'body2',
               borderRadius: 0.75,
@@ -85,24 +119,29 @@ export default function AccountPopover() {
       >
         <Box sx={{ my: 1.5, px: 2.5 }}>
           <Typography variant="subtitle2" noWrap>
-            {currentUser?.firstName} {currentUser?.lastName}
+            {displayName}
           </Typography>
+          {currentUser?.email ? (
+            <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
+              {currentUser.email}
+            </Typography>
+          ) : null}
         </Box>
         <Divider sx={{ borderStyle: 'dashed' }} />
         <Stack sx={{ p: 1 }}>
-          {MENU_OPTIONS.map((option) => (
+          {menuOptions.map((option) => (
             <MenuItem
-              key={option.label}
+              key={option.labelKey}
               onClick={() => handleNavigate(option.path)}
               sx={{ cursor: 'pointer' }}
             >
-              {option.label}
+              {t(option.labelKey)}
             </MenuItem>
           ))}
         </Stack>
         <Divider sx={{ borderStyle: 'dashed' }} />
         <MenuItem onClick={handleLogout} sx={{ m: 1, cursor: 'pointer' }}>
-          Logout
+          {t('logout')}
         </MenuItem>
       </Popover>
     </>

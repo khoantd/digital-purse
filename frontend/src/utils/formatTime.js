@@ -1,8 +1,14 @@
 import { format, getTime, formatDistanceToNow, parse, isValid, startOfDay, endOfDay } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
+import i18n from '../i18n';
 
 // Backend TransactionResponseMapper uses Constants.DATE_TIME_FORMAT
 const BACKEND_DATE_TIME = 'dd.MM.yyyy HH:mm:ss';
 const BACKEND_DATE = 'dd.MM.yyyy';
+
+function dateFnsLocale() {
+  return i18n.language?.startsWith('en') ? enUS : vi;
+}
 
 export function toDate(value) {
   if (value == null || value === '') {
@@ -54,13 +60,13 @@ export function parseDateInputEnd(value) {
 export function fDate(date, newFormat) {
   const fm = newFormat || 'dd MMM yyyy';
   const parsed = toDate(date);
-  return parsed ? format(parsed, fm) : '';
+  return parsed ? format(parsed, fm, { locale: dateFnsLocale() }) : '';
 }
 
 export function fDateTime(date, newFormat) {
   const fm = newFormat || 'dd MMM yyyy p';
   const parsed = toDate(date);
-  return parsed ? format(parsed, fm) : '';
+  return parsed ? format(parsed, fm, { locale: dateFnsLocale() }) : '';
 }
 
 export function fTimestamp(date) {
@@ -73,6 +79,7 @@ export function fToNow(date) {
   return parsed
     ? formatDistanceToNow(parsed, {
         addSuffix: true,
+        locale: dateFnsLocale(),
       })
     : '';
 }

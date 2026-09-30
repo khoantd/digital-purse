@@ -1,5 +1,6 @@
 import { SnackbarProvider } from 'notistack';
 import ReactDOM from 'react-dom/client';
+import './i18n';
 import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';

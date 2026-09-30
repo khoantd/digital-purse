@@ -5,6 +5,7 @@ import { bgBlur } from '../../../utils/cssStyles';
 import Iconify from '../../../components/iconify';
 import Searchbar from './Searchbar';
 import AccountPopover from './AccountPopover';
+import LanguagePopover from './LanguagePopover';
 import OrgSwitcher from './OrgSwitcher';
 import TransactionQuotaMeter from './TransactionQuotaMeter';
 
@@ -64,6 +65,7 @@ export default function Header({ onOpenNav }) {
         >
           <OrgSwitcher />
           <TransactionQuotaMeter />
+          <LanguagePopover />
           <AccountPopover />
         </Stack>
       </StyledToolbar>

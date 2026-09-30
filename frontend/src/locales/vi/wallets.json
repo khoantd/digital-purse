@@ -1,0 +1,100 @@
+{
+  "helmet": "Ví | Digital Purse",
+  "title": "Ví",
+  "titleAdmin": "Tất cả ví",
+  "subtitle": "Ví tổ chức và khách hàng của doanh nghiệp đang chọn.",
+  "subtitleAdmin": "Tất cả ví trên hệ thống. Lọc theo loại chủ ví.",
+  "stats": {
+    "total": "Tổng",
+    "organization": "Tổ chức",
+    "customer": "Khách hàng"
+  },
+  "filters": {
+    "searchPlaceholder": "Tìm theo tên hoặc số tài khoản…",
+    "searchPlaceholderExtended": "Tên, số tài khoản, khách hàng",
+    "typeAll": "Tất cả loại",
+    "typeFilterAria": "Lọc theo loại ví",
+    "organization": "Tổ chức",
+    "customer": "Khách hàng"
+  },
+  "empty": {
+    "none": "Chưa có ví",
+    "noneDescription": "Tạo ví để bắt đầu luân chuyển tiền.",
+    "noneDescriptionOrg": "Tạo ví đầu tiên cho tổ chức. Hệ thống tự gán số tài khoản Việt Nam.",
+    "adminNoneDescription": "Chưa có ví được tạo.",
+    "noMatch": "Không có ví phù hợp",
+    "noMatchDescription": "Thử điều chỉnh tìm kiếm hoặc bộ lọc loại.",
+    "filterHint": "Thử từ khóa hoặc bộ lọc khác, hoặc bấm Xóa lọc để xem tất cả ví."
+  },
+  "actions": {
+    "newWallet": "Tạo ví mới",
+    "viewTransactions": "Xem giao dịch"
+  },
+  "pagination": {
+    "rowsPerPage": "Số ví mỗi trang",
+    "showing": "Hiển thị {{filtered}} / {{total}} {{unit}}",
+    "wallet": "ví",
+    "wallets": "ví"
+  },
+  "menu": {
+    "actionsFor": "Thao tác cho {{name}}"
+  },
+  "messages": {
+    "accountCopied": "Đã sao chép số tài khoản",
+    "copyFailed": "Không thể sao chép số tài khoản",
+    "nameLength": "Tên ví phải từ 3–50 ký tự",
+    "walletUpdated": "Đã cập nhật ví",
+    "loadFailed": "Không tải được danh sách ví"
+  },
+  "dialog": {
+    "detailsTitle": "Chi tiết ví",
+    "editTitle": "Sửa ví",
+    "rename": "Đổi tên ví",
+    "copyAccount": "Sao chép số tài khoản",
+    "copied": "Đã sao chép",
+    "accountNumber": "Số tài khoản",
+    "ownerUser": "Người dùng sở hữu"
+  },
+  "edit": {
+    "walletName": "Tên ví",
+    "nameHelper": "3–50 ký tự",
+    "accountHelper": "Hệ thống gán và không thể thay đổi",
+    "balanceHelper": "Thay đổi số dư qua Nạp tiền, Chuyển tiền hoặc Rút tiền",
+    "ownerType": "Loại chủ ví"
+  },
+  "table": {
+    "id": "Mã",
+    "name": "Tên",
+    "type": "Loại",
+    "balance": "Số dư",
+    "currency": "Loại tiền",
+    "user": "Người dùng",
+    "account": "Số tài khoản"
+  },
+  "newWalletPage": {
+    "helmet": "Tạo ví mới | Digital Purse",
+    "title": "Tạo ví mới",
+    "subtitle": "Chọn ví thuộc tổ chức hay khách hàng, đặt tên và số dư ban đầu. Hệ thống tự gán số tài khoản Việt Nam (VN).",
+    "ownerType": "Loại chủ ví",
+    "customerHelper": "Khách hàng đang hoạt động trong tổ chức hiện tại",
+    "startingBalance": "Số dư ban đầu",
+    "balanceHelper": "Đồng Việt Nam (VND), số nguyên",
+    "footnote": "Số tài khoản được tạo trên máy chủ (VND · hỗ trợ VietQR). Loại chủ ví chỉ là nhãn; quyền truy cập vẫn theo tổ chức.",
+    "create": "Tạo ví",
+    "selectCustomer": "Chọn khách hàng cho ví này",
+    "balancePositive": "Số dư ban đầu phải lớn hơn 0",
+    "created": "Đã tạo ví thành công"
+  },
+  "receivePage": {
+    "helmet": "Nhận tiền | Digital Purse",
+    "title": "Nhận tiền qua VietQR",
+    "subtitle": "Hiển thị mã QR để người khác chuyển vào ví VND của tổ chức (demo Mock — không phải chuyển khoản ngân hàng thật).",
+    "empty": "Tạo ví trước để sinh mã VietQR.",
+    "qrAlt": "VietQR cho {{name}}",
+    "demoBin": "{{currency}} · BIN ngân hàng demo 970436",
+    "copyPayload": "Sao chép payload VietQR",
+    "goToTransfers": "Đến Chuyển tiền",
+    "payloadCopied": "Đã sao chép payload VietQR",
+    "copyFailed": "Không thể sao chép"
+  }
+}

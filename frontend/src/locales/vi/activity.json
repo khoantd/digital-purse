@@ -1,0 +1,55 @@
+{
+  "helmet": "Nhật ký | Digital Purse",
+  "title": "Nhật ký hoạt động",
+  "subtitle": "Hành động bảo mật và quản trị của tổ chức. Chỉ OWNER và ADMIN xem được.",
+  "events": {
+    "all": "Tất cả sự kiện",
+    "AUTH_LOGIN": "Đăng nhập",
+    "AUTH_LOGOUT": "Đăng xuất",
+    "AUTH_SIGNUP": "Đăng ký",
+    "AUTH_PROFILE_UPDATE": "Cập nhật hồ sơ",
+    "AUTH_PASSWORD_CHANGE": "Đổi mật khẩu",
+    "ORG_CREATE": "Tạo tổ chức",
+    "ORG_UPDATE": "Cập nhật tổ chức",
+    "ORG_MEMBER_ADD": "Thêm thành viên",
+    "ORG_MEMBER_ROLE_UPDATE": "Đổi vai trò thành viên",
+    "ORG_MEMBER_REMOVE": "Gỡ thành viên",
+    "ORG_LIMITS_UPDATE": "Cập nhật hạn mức",
+    "CUSTOMER_CREATE": "Tạo khách hàng",
+    "CUSTOMER_UPDATE": "Cập nhật khách hàng",
+    "CUSTOMER_ARCHIVE": "Lưu trữ khách hàng",
+    "CUSTOMER_LINK_WALLET": "Liên kết khách hàng",
+    "CUSTOMER_UNLINK_WALLET": "Gỡ liên kết khách hàng",
+    "WALLET_CREATE": "Tạo ví",
+    "WALLET_UPDATE": "Cập nhật ví",
+    "WALLET_DELETE": "Xóa ví",
+    "SPEND_REQUEST_CREATE": "Yêu cầu chi",
+    "SPEND_APPROVE": "Duyệt chi",
+    "SPEND_REJECT": "Từ chối chi",
+    "TX_REVERSE": "Hoàn tác giao dịch"
+  },
+  "table": {
+    "when": "Thời gian",
+    "actor": "Người thực hiện",
+    "event": "Sự kiện",
+    "summary": "Tóm tắt",
+    "ip": "IP",
+    "details": "Chi tiết"
+  },
+  "empty": {
+    "none": "Chưa có nhật ký",
+    "noneDescription": "Hành động bảo mật và quản trị sẽ hiển thị khi đội ngũ làm việc.",
+    "noMatch": "Không có nhật ký phù hợp",
+    "noMatchDescription": "Thử đổi loại sự kiện hoặc khoảng ngày, hoặc xóa bộ lọc.",
+    "clearFilters": "Xóa bộ lọc"
+  },
+  "details": {
+    "title": "Chi tiết hoạt động",
+    "event": "Sự kiện",
+    "summary": "Tóm tắt",
+    "metadata": "Siêu dữ liệu"
+  },
+  "pagination": {
+    "rowsPerPage": "Nhật ký mỗi trang"
+  }
+}

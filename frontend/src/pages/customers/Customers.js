@@ -24,6 +24,7 @@ import {
 import { LoadingButton } from '@mui/lab';
 import { enqueueSnackbar } from 'notistack';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import Iconify from '../../components/iconify';
@@ -39,18 +40,6 @@ const emptyForm = {
   taxId: '',
   notes: '',
 };
-
-const STATUS_OPTIONS = [
-  { value: 'ACTIVE', label: 'Active' },
-  { value: 'ARCHIVED', label: 'Archived' },
-  { value: 'ALL', label: 'All statuses' },
-];
-
-const LINKED_OPTIONS = [
-  { value: '', label: 'All links' },
-  { value: 'linked', label: 'Linked' },
-  { value: 'unlinked', label: 'Unlinked' },
-];
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25];
 const PAGINATION_SX = {
@@ -90,6 +79,7 @@ function matchesLinkedFilter(row, linkedFilter) {
 }
 
 export default function Customers() {
+  const { t } = useTranslation(['customers', 'common']);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -108,6 +98,23 @@ export default function Customers() {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuCustomer, setMenuCustomer] = useState(null);
   const navigate = useNavigate();
+
+  const statusOptions = useMemo(
+    () => [
+      { value: 'ACTIVE', label: t('filters.statusActive') },
+      { value: 'ARCHIVED', label: t('filters.statusArchived') },
+      { value: 'ALL', label: t('filters.statusAll') },
+    ],
+    [t]
+  );
+  const linkedOptions = useMemo(
+    () => [
+      { value: '', label: t('filters.linkedAll') },
+      { value: 'linked', label: t('filters.linkedYes') },
+      { value: 'unlinked', label: t('filters.linkedNo') },
+    ],
+    [t]
+  );
 
   const filtersActive = Boolean(
     appliedQuery.trim() || statusFilter !== 'ACTIVE' || linkedFilter
@@ -233,7 +240,7 @@ export default function Customers() {
     event.preventDefault();
     const name = formValues.name.trim();
     if (name.length < 2) {
-      enqueueSnackbar('Name must be at least 2 characters', { variant: 'warning' });
+      enqueueSnackbar(t('snackbar.nameMinLength'), { variant: 'warning' });
       return;
     }
     setSubmitting(true);
@@ -249,12 +256,12 @@ export default function Customers() {
       : HttpService.postWithAuth('/customers', body);
     request
       .then(() => {
-        enqueueSnackbar(editingId ? 'Customer updated' : 'Customer created', { variant: 'success' });
+        enqueueSnackbar(editingId ? t('snackbar.customerUpdated') : t('snackbar.customerCreated'), { variant: 'success' });
         setDialogOpen(false);
         load();
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Save failed', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('snackbar.saveFailed'), { variant: 'error' });
       })
       .finally(() => setSubmitting(false));
   };
@@ -270,18 +277,18 @@ export default function Customers() {
     event.preventDefault();
     const iban = linkIban.trim();
     if (!iban) {
-      enqueueSnackbar('Enter an account number', { variant: 'warning' });
+      enqueueSnackbar(t('snackbar.enterAccountNumber'), { variant: 'warning' });
       return;
     }
     setSubmitting(true);
     HttpService.postWithAuth(`/customers/${linkCustomerId}/link-wallet`, { iban })
       .then(() => {
-        enqueueSnackbar('Wallet linked', { variant: 'success' });
+        enqueueSnackbar(t('snackbar.walletLinked'), { variant: 'success' });
         setLinkDialogOpen(false);
         load();
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Link failed', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('snackbar.linkFailed'), { variant: 'error' });
       })
       .finally(() => setSubmitting(false));
   };
@@ -290,11 +297,11 @@ export default function Customers() {
     closeMenu();
     HttpService.postWithAuth(`/customers/${customer.id}/unlink-wallet`, null)
       .then(() => {
-        enqueueSnackbar('Wallet unlinked', { variant: 'success' });
+        enqueueSnackbar(t('snackbar.walletUnlinked'), { variant: 'success' });
         load();
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Unlink failed', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('snackbar.unlinkFailed'), { variant: 'error' });
       });
   };
 
@@ -302,11 +309,11 @@ export default function Customers() {
     closeMenu();
     HttpService.postWithAuth(`/customers/${customer.id}/archive`, null)
       .then(() => {
-        enqueueSnackbar('Customer archived', { variant: 'success' });
+        enqueueSnackbar(t('snackbar.customerArchived'), { variant: 'success' });
         load();
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Archive failed', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('snackbar.archiveFailed'), { variant: 'error' });
       });
   };
 
@@ -323,14 +330,14 @@ export default function Customers() {
   return (
     <>
       <Helmet>
-        <title> Customers | Digital Purse </title>
+        <title>{t('helmet')}</title>
       </Helmet>
       <Container sx={{ minWidth: '100%' }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3} spacing={2}>
           <Stack spacing={0.5}>
-            <Typography variant="h4">Customers</Typography>
+            <Typography variant="h4">{t('title')}</Typography>
             <Typography variant="body2" color="text.secondary">
-              Payee contacts for the active organization. Link a Digital Purse account to speed up transfers.
+              {t('subtitle')}
             </Typography>
           </Stack>
           <Button
@@ -339,7 +346,7 @@ export default function Customers() {
             onClick={openCreate}
             sx={{ cursor: 'pointer', flexShrink: 0 }}
           >
-            New customer
+            {t('actions.newCustomer')}
           </Button>
         </Stack>
 
@@ -360,13 +367,13 @@ export default function Customers() {
           }}
         >
           {directoryStats.activeCount === 1
-            ? '1 active customer'
-            : `${directoryStats.activeCount} active customers`}
+            ? t('stats.activeCountOne')
+            : t('stats.activeCountMany', { count: directoryStats.activeCount })}
         </Typography>
 
         <Box sx={{ ...FOUR_COL_GRID_SX, mb: 3 }}>
           <OpsStatCard
-            title="Active"
+            title={t('stats.active')}
             value={directoryStats.activeCount}
             format="count"
             icon="eva:people-outline"
@@ -375,7 +382,7 @@ export default function Customers() {
             sx={statusFilter === 'ACTIVE' ? ACTIVE_STAT_SX : undefined}
           />
           <OpsStatCard
-            title="Archived"
+            title={t('stats.archived')}
             value={directoryStats.archivedCount}
             format="count"
             icon="eva:archive-outline"
@@ -384,7 +391,7 @@ export default function Customers() {
             sx={statusFilter === 'ARCHIVED' ? ACTIVE_STAT_SX : undefined}
           />
           <OpsStatCard
-            title="Linked"
+            title={t('stats.linked')}
             value={directoryStats.linkedCount}
             format="count"
             icon="eva:link-2-outline"
@@ -393,7 +400,7 @@ export default function Customers() {
             sx={linkedFilter === 'linked' ? ACTIVE_STAT_SX : undefined}
           />
           <OpsStatCard
-            title="Unlinked"
+            title={t('stats.unlinked')}
             value={directoryStats.unlinkedCount}
             format="count"
             icon="eva:link-break-outline"
@@ -413,8 +420,8 @@ export default function Customers() {
           >
             <TextField
               size="small"
-              label="Search"
-              placeholder="Name"
+              label={t('common:filters.search')}
+              placeholder={t('filters.searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -426,12 +433,12 @@ export default function Customers() {
               sx={{ minWidth: 200, maxWidth: 280 }}
             />
             <Button variant="outlined" onClick={runSearch} sx={{ cursor: 'pointer' }}>
-              Search
+              {t('common:actions.search')}
             </Button>
             <TextField
               select
               size="small"
-              label="Status"
+              label={t('common:filters.status')}
               value={statusFilter}
               onChange={(event) => {
                 setStatusFilter(event.target.value);
@@ -439,7 +446,7 @@ export default function Customers() {
               }}
               sx={{ minWidth: 160 }}
             >
-              {STATUS_OPTIONS.map((opt) => (
+              {statusOptions.map((opt) => (
                 <MenuItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </MenuItem>
@@ -448,7 +455,7 @@ export default function Customers() {
             <TextField
               select
               size="small"
-              label="Linked"
+              label={t('common:filters.linked')}
               value={linkedFilter}
               onChange={(event) => {
                 setLinkedFilter(event.target.value);
@@ -456,7 +463,7 @@ export default function Customers() {
               }}
               sx={{ minWidth: 160 }}
             >
-              {LINKED_OPTIONS.map((opt) => (
+              {linkedOptions.map((opt) => (
                 <MenuItem key={opt.value || 'all-links'} value={opt.value}>
                   {opt.label}
                 </MenuItem>
@@ -469,31 +476,29 @@ export default function Customers() {
                 startIcon={<Iconify icon="eva:close-fill" />}
                 sx={{ alignSelf: { xs: 'flex-start', md: 'center' }, cursor: 'pointer' }}
               >
-                Clear
+                {t('common:actions.clear')}
               </Button>
             )}
           </Stack>
 
           {loading ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 6, textAlign: 'center' }}>
-              Loading…
+              {t('common:status.loading')}
             </Typography>
           ) : rows.length === 0 ? (
             <EmptyState
-              title={appliedQuery ? 'No customers match your search' : 'No customers yet'}
+              title={appliedQuery ? t('empty.noSearch') : t('empty.none')}
               description={
-                appliedQuery
-                  ? 'Try a different name, or clear the search to see the full directory.'
-                  : 'Add a payee contact, then optionally link their Digital Purse account number.'
+                appliedQuery ? t('empty.noSearchDescription') : t('empty.noneDescription')
               }
-              actionLabel={!appliedQuery ? 'New customer' : undefined}
+              actionLabel={!appliedQuery ? t('actions.newCustomer') : undefined}
               onAction={!appliedQuery ? openCreate : undefined}
             />
           ) : filteredRows.length === 0 ? (
             <EmptyState
               icon="eva:search-outline"
-              title="No customers match your filters"
-              description="Try a different status or linked filter, or clear the filters above."
+              title={t('empty.noFilter')}
+              description={t('empty.noFilterDescription')}
             />
           ) : (
             <>
@@ -502,11 +507,11 @@ export default function Customers() {
                   <Table>
                     <TableHead>
                       <TableRow>
-                        <TableCell>Name</TableCell>
-                        <TableCell>Phone</TableCell>
-                        <TableCell>Email</TableCell>
-                        <TableCell>Linked account</TableCell>
-                        <TableCell>Status</TableCell>
+                        <TableCell>{t('common:fields.name')}</TableCell>
+                        <TableCell>{t('table.phone')}</TableCell>
+                        <TableCell>{t('common:fields.email')}</TableCell>
+                        <TableCell>{t('table.linkedAccount')}</TableCell>
+                        <TableCell>{t('common:filters.status')}</TableCell>
                         <TableCell align="right" />
                       </TableRow>
                     </TableHead>
@@ -517,7 +522,7 @@ export default function Customers() {
                             <Typography variant="subtitle2">{row.name}</Typography>
                             {row.taxId && (
                               <Typography variant="caption" color="text.secondary">
-                                Tax ID: {row.taxId}
+                                {t('table.taxIdPrefix', { value: row.taxId })}
                               </Typography>
                             )}
                           </TableCell>
@@ -526,7 +531,7 @@ export default function Customers() {
                           <TableCell>
                             {row.linkedWalletIban ? (
                               <Stack spacing={0.25}>
-                                <Typography variant="body2">{row.linkedWalletName || 'Wallet'}</Typography>
+                                <Typography variant="body2">{row.linkedWalletName || t('walletNameFallback')}</Typography>
                                 <Typography variant="caption" color="text.secondary">
                                   {row.linkedWalletIban}
                                 </Typography>
@@ -560,7 +565,7 @@ export default function Customers() {
                   setRowsPerPage(parseInt(event.target.value, 10));
                   setPage(0);
                 }}
-                labelRowsPerPage="Customers per page"
+                labelRowsPerPage={t('pagination.rowsPerPage')}
                 sx={PAGINATION_SX}
               />
             </>
@@ -577,33 +582,33 @@ export default function Customers() {
       >
         <MenuItem onClick={() => openEdit(menuCustomer)} sx={{ cursor: 'pointer' }}>
           <Iconify icon="eva:edit-fill" sx={{ mr: 2 }} />
-          Edit
+          {t('common:actions.edit')}
         </MenuItem>
         <MenuItem onClick={() => openLink(menuCustomer)} sx={{ cursor: 'pointer' }}>
           <Iconify icon="eva:link-2-fill" sx={{ mr: 2 }} />
-          Link wallet
+          {t('actions.linkWallet')}
         </MenuItem>
         {menuCustomer?.linkedWalletIban && (
           <MenuItem onClick={() => unlink(menuCustomer)} sx={{ cursor: 'pointer' }}>
             <Iconify icon="eva:link-break-fill" sx={{ mr: 2 }} />
-            Unlink wallet
+            {t('actions.unlinkWallet')}
           </MenuItem>
         )}
         {menuCustomer?.status === 'ACTIVE' && (
           <MenuItem onClick={() => archive(menuCustomer)} sx={{ color: 'error.main', cursor: 'pointer' }}>
             <Iconify icon="eva:trash-2-outline" sx={{ mr: 2 }} />
-            Archive
+            {t('actions.archive')}
           </MenuItem>
         )}
       </Popover>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{editingId ? 'Edit customer' : 'New customer'}</DialogTitle>
+        <DialogTitle>{editingId ? t('actions.edit') : t('actions.newCustomer')}</DialogTitle>
         <DialogContent>
           <Stack component="form" id="customer-form" onSubmit={saveCustomer} spacing={2} sx={{ pt: 1 }} noValidate>
             <TextField
               name="name"
-              label="Name"
+              label={t('common:fields.name')}
               required
               value={formValues.name}
               onChange={handleFormChange}
@@ -611,14 +616,14 @@ export default function Customers() {
             />
             <TextField
               name="phone"
-              label="Phone"
+              label={t('table.phone')}
               value={formValues.phone}
               onChange={handleFormChange}
               inputProps={{ maxLength: 20 }}
             />
             <TextField
               name="email"
-              label="Email"
+              label={t('common:fields.email')}
               type="email"
               value={formValues.email}
               onChange={handleFormChange}
@@ -626,14 +631,14 @@ export default function Customers() {
             />
             <TextField
               name="taxId"
-              label="Tax ID"
+              label={t('common:fields.taxId')}
               value={formValues.taxId}
               onChange={handleFormChange}
               inputProps={{ maxLength: 20 }}
             />
             <TextField
               name="notes"
-              label="Notes"
+              label={t('common:fields.notes')}
               multiline
               minRows={2}
               value={formValues.notes}
@@ -644,34 +649,34 @@ export default function Customers() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)} sx={{ cursor: 'pointer' }}>
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
           <LoadingButton type="submit" form="customer-form" variant="contained" loading={submitting} sx={{ cursor: 'pointer' }}>
-            Save
+            {t('common:actions.save')}
           </LoadingButton>
         </DialogActions>
       </Dialog>
 
       <Dialog open={linkDialogOpen} onClose={() => setLinkDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Link Digital Purse</DialogTitle>
+        <DialogTitle>{t('dialogs.linkTitle')}</DialogTitle>
         <DialogContent>
           <Stack component="form" id="link-form" onSubmit={submitLink} spacing={2} sx={{ pt: 1 }} noValidate>
             <TextField
-              label="Account number"
+              label={t('dialogs.accountNumber')}
               value={linkIban}
               onChange={(e) => setLinkIban(e.target.value)}
-              placeholder="VN…"
+              placeholder={t('dialogs.accountPlaceholder')}
               required
-              helperText="Existing Digital Purse account number in the system"
+              helperText={t('dialogs.accountHelper')}
             />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setLinkDialogOpen(false)} sx={{ cursor: 'pointer' }}>
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
           <LoadingButton type="submit" form="link-form" variant="contained" loading={submitting} sx={{ cursor: 'pointer' }}>
-            Link
+            {t('actions.link')}
           </LoadingButton>
         </DialogActions>
       </Dialog>

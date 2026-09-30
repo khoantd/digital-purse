@@ -1,0 +1,34 @@
+{
+  "helmet": "Home | Digital Purse",
+  "greeting": "Hi {{name}}",
+  "greetingFallback": "there",
+  "subtitleAdmin": "Admin overview of wallets and activity.",
+  "subtitleOrg": "Organization balance and quick actions for the active business.",
+  "stats": {
+    "transferred": "Transferred",
+    "withdrawn": "Withdrawn",
+    "received": "Received",
+    "pendingApprovals": "Pending approvals",
+    "todayOutbound": "Today outbound {{amount}}",
+    "today": "Today {{amount}}",
+    "wallets": "Wallets",
+    "usersWithWallets": "Users with wallets",
+    "totalBalance": "Total balance",
+    "exact": "Exact: {{amount}}",
+    "transactions": "Transactions"
+  },
+  "quickActions": {
+    "addFunds": "Add funds",
+    "transfer": "Transfer",
+    "withdraw": "Withdraw"
+  },
+  "wallets": {
+    "organizationSection": "Organization Wallets",
+    "customerSection": "Customers' Wallets",
+    "noOrgWallets": "No organization wallets yet.",
+    "noCustomerWallets": "No customer wallets yet.",
+    "emptyTitle": "No wallets yet",
+    "emptyDescription": "Create a wallet to start adding funds and transferring money.",
+    "newWallet": "New wallet"
+  }
+}

@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, ButtonBase, LinearProgress, Stack, Tooltip, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import HttpService from '../../../services/HttpService';
 import OrganizationContext from '../../../services/OrganizationContext';
+import { localeForLang } from '../../../i18n/storage';
+import i18n from '../../../i18n';
 
 const EMPTY = { transactionQuota: 0, transactionUsed: 0, remaining: 0 };
 
@@ -12,11 +15,17 @@ function progressColor(remaining, quota) {
   return 'primary';
 }
 
+function formatCount(n) {
+  const locale = localeForLang(i18n.language);
+  return Number(n).toLocaleString(locale);
+}
+
 /**
  * Compact lifetime transaction-quota meter for the dashboard header.
  */
 export default function TransactionQuotaMeter() {
   const navigate = useNavigate();
+  const { t } = useTranslation('header');
   const [data, setData] = useState(EMPTY);
   const [visible, setVisible] = useState(false);
 
@@ -60,17 +69,19 @@ export default function TransactionQuotaMeter() {
       ? Math.min(100, (data.transactionUsed / data.transactionQuota) * 100)
       : 0;
   const color = progressColor(data.remaining, data.transactionQuota);
-  const label = `${data.transactionUsed.toLocaleString()} / ${data.transactionQuota.toLocaleString()}`;
   const tip =
     data.remaining <= 0
-      ? 'Transaction quota used up'
-      : `${data.remaining.toLocaleString()} transactions remaining`;
+      ? t('quotaUsedUp')
+      : t('quotaRemaining', { count: formatCount(data.remaining) });
 
   return (
     <Tooltip title={tip} arrow>
       <ButtonBase
         onClick={() => navigate('/settings?tab=subscription')}
-        aria-label={`Transaction quota ${label}`}
+        aria-label={t('quotaAria', {
+          used: formatCount(data.transactionUsed),
+          quota: formatCount(data.transactionQuota),
+        })}
         sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -105,7 +116,7 @@ export default function TransactionQuotaMeter() {
             color="text.secondary"
             sx={{ display: { xs: 'none', sm: 'block' }, lineHeight: 1.2, flexShrink: 0 }}
           >
-            Transactions
+            {t('transactionsQuota')}
           </Typography>
           <Typography
             variant="body2"
@@ -119,13 +130,13 @@ export default function TransactionQuotaMeter() {
             }}
           >
             <Box component="span" sx={{ color: 'text.primary' }}>
-              {data.transactionUsed.toLocaleString()}
+              {formatCount(data.transactionUsed)}
             </Box>
             <Box component="span" sx={{ color: 'text.secondary', fontWeight: 500, mx: 0.5 }}>
               /
             </Box>
             <Box component="span" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-              {data.transactionQuota.toLocaleString()}
+              {formatCount(data.transactionQuota)}
             </Box>
           </Typography>
         </Stack>

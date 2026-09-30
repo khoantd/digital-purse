@@ -1,0 +1,112 @@
+{
+  "appName": "Digital Purse",
+  "brandSuffix": "Digital Purse",
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "clear": "Clear",
+    "search": "Search",
+    "close": "Close",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "details": "Details",
+    "detailsFor": "View details for {{name}}",
+    "viewAll": "View all",
+    "view": "View",
+    "working": "Working…",
+    "clearFilters": "Clear filters",
+    "updatePassword": "Update password",
+    "linkWallet": "Link wallet",
+    "unlinkWallet": "Unlink wallet",
+    "archive": "Archive",
+    "new": "New",
+    "copy": "Copy",
+    "retry": "Retry",
+    "logout": "Logout",
+    "goHome": "Go to Home",
+    "approve": "Approve",
+    "reject": "Reject",
+    "reverse": "Reverse",
+    "add": "Add",
+    "invite": "Invite member",
+    "remove": "Remove",
+    "changeRole": "Change role",
+    "editFor": "Edit {{name}}"
+  },
+  "status": {
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "active": "Active",
+    "archived": "Archived",
+    "all": "All",
+    "success": "Success",
+    "pending": "Pending",
+    "failed": "Failed"
+  },
+  "filters": {
+    "from": "From",
+    "to": "To",
+    "type": "Type",
+    "status": "Status",
+    "operation": "Operation",
+    "eventType": "Event type",
+    "linked": "Linked",
+    "search": "Search",
+    "clear": "Clear",
+    "allTypes": "All types",
+    "allStatuses": "All statuses",
+    "allEvents": "All events"
+  },
+  "pagination": {
+    "rowsPerPage": "Rows per page:"
+  },
+  "fields": {
+    "name": "Name",
+    "email": "Email",
+    "username": "Username",
+    "password": "Password",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "balance": "Balance",
+    "account": "Account",
+    "currency": "Currency",
+    "amount": "Amount",
+    "description": "Description",
+    "phone": "Phone",
+    "notes": "Notes",
+    "when": "When",
+    "summary": "Summary",
+    "metadata": "Metadata",
+    "linkedAccount": "Linked account",
+    "member": "Member",
+    "operation": "Operation",
+    "requester": "Requester",
+    "role": "Role",
+    "id": "Id",
+    "user": "User",
+    "taxId": "Tax ID",
+    "organizationId": "Organization ID",
+    "organizationName": "Organization name"
+  },
+  "ownerType": {
+    "organization": "Organization",
+    "customer": "Customer",
+    "customerNamed": "Customer · {{name}}"
+  },
+  "validation": {
+    "required": "This field is required"
+  },
+  "empty": {
+    "noData": "No data"
+  },
+  "tip": {
+    "walletTransactions": "Tip: open a wallet to view its transactions, or use Transfers to send, add, or withdraw."
+  },
+  "balanceHero": {
+    "totalBalance": "Total balance",
+    "acrossOne": "Across 1 wallet",
+    "acrossMany": "Across {{count}} wallets"
+  }
+}

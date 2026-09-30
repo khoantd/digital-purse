@@ -2,7 +2,9 @@ import { Box, Container, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Logo from '../../components/logo';
+import LanguagePopover from '../../layouts/dashboard/header/LanguagePopover';
 import useResponsive from '../../hooks/useResponsive';
 import LoginForm from './LoginForm';
 
@@ -36,11 +38,12 @@ const StyledContent = styled('div')(({ theme }) => ({
 
 export default function Login() {
   const mdUp = useResponsive('up', 'md');
+  const { t } = useTranslation('auth');
 
   return (
     <>
       <Helmet>
-        <title> Log in | Digital Purse </title>
+        <title>{t('login.helmet')}</title>
       </Helmet>
       <StyledRoot>
         <Logo
@@ -52,30 +55,44 @@ export default function Login() {
             color: { xs: 'text.primary', md: 'common.white' },
           }}
         />
+        <Box
+          sx={{
+            position: 'fixed',
+            top: { xs: 12, sm: 20, md: 36 },
+            right: { xs: 12, sm: 20, md: 36 },
+            zIndex: 2,
+          }}
+        >
+          <LanguagePopover />
+        </Box>
         {mdUp && (
           <StyledSection>
             <Box sx={{ px: 5, mt: 10, mb: 5 }}>
               <Typography variant="h3" sx={{ mb: 2, color: 'common.white' }}>
-                Welcome back
+                {t('login.welcomeBack')}
               </Typography>
               <Typography variant="body1" sx={{ opacity: 0.85, maxWidth: 320 }}>
-                Sign in to Digital Purse — organization wallets, transfers, and dual-control approvals.
+                {t('login.heroBody')}
               </Typography>
             </Box>
             <Box sx={{ px: 3, pb: 6 }}>
-              <img src="/assets/illustrations/illustration_login.png" alt="Login" style={{ maxWidth: '100%' }} />
+              <img
+                src="/assets/illustrations/illustration_login.png"
+                alt={t('login.loginIllustrationAlt')}
+                style={{ maxWidth: '100%' }}
+              />
             </Box>
           </StyledSection>
         )}
         <Container maxWidth="sm">
           <StyledContent>
             <Typography variant="h4" gutterBottom>
-              Log in
+              {t('login.title')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-              Don&apos;t have an account?{' '}
+              {t('login.noAccount')}{' '}
               <Link to="/signup" style={{ textDecoration: 'none', fontWeight: 600, cursor: 'pointer' }}>
-                Sign up
+                {t('login.signUpLink')}
               </Link>
             </Typography>
             <LoginForm />

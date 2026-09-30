@@ -2,6 +2,7 @@ import { LoadingButton } from '@mui/lab';
 import { Autocomplete, Button, InputAdornment, Stack, TextField, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import AuthService from '../../services/AuthService';
 import HttpService from '../../services/HttpService';
@@ -15,6 +16,7 @@ const emptyForm = {
 };
 
 export default function WithdrawFunds() {
+  const { t } = useTranslation(['transfers', 'common', 'wallets']);
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const [formValues, setFormValues] = useState(emptyForm);
@@ -30,7 +32,9 @@ export default function WithdrawFunds() {
       HttpService.getListWithAuth('/wallets?page=0&size=1000')
         .then((list) => setWallets(list))
         .catch((error) => {
-          enqueueSnackbar(error.response?.data?.message || 'Could not load wallets', { variant: 'error' });
+          enqueueSnackbar(error.response?.data?.message || t('wallets:messages.loadFailed'), {
+            variant: 'error',
+          });
         })
         .finally(() => setLoadingWallets(false));
     };
@@ -41,7 +45,7 @@ export default function WithdrawFunds() {
     };
     window.addEventListener('organization-changed', onOrg);
     return () => window.removeEventListener('organization-changed', onOrg);
-  }, [enqueueSnackbar]);
+  }, [enqueueSnackbar, t]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -60,17 +64,17 @@ export default function WithdrawFunds() {
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!formValues.fromWalletIban) {
-      enqueueSnackbar('Select a wallet', { variant: 'warning' });
+      enqueueSnackbar(t('transfers:withdraw.selectWallet'), { variant: 'warning' });
       return;
     }
     const amount = Number(formValues.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      enqueueSnackbar('Enter a valid amount', { variant: 'warning' });
+      enqueueSnackbar(t('transfers:validation.validAmount'), { variant: 'warning' });
       return;
     }
     const description = formValues.description.trim();
     if (!description || description.length > 50) {
-      enqueueSnackbar('Note is required (max 50 characters)', { variant: 'warning' });
+      enqueueSnackbar(t('transfers:validation.noteRequired'), { variant: 'warning' });
       return;
     }
 
@@ -89,7 +93,7 @@ export default function WithdrawFunds() {
       .then((response) => {
         const pending = response?.status === 'PENDING_APPROVAL';
         enqueueSnackbar(
-          pending ? 'Withdrawal submitted for approval' : 'Withdrawal completed successfully',
+          pending ? t('transfers:withdraw.pending') : t('transfers:withdraw.success'),
           { variant: 'success' }
         );
         navigate(pending ? '/approvals' : '/transactions');
@@ -109,17 +113,15 @@ export default function WithdrawFunds() {
   return (
     <Stack component="form" onSubmit={handleSubmit} spacing={3} sx={{ maxWidth: 440 }} noValidate>
       <Stack spacing={0.5}>
-        <Typography variant="h6">Withdraw funds</Typography>
+        <Typography variant="h6">{t('transfers:withdraw.title')}</Typography>
         <Typography variant="body2" color="text.secondary">
-          {isAdmin
-            ? 'Move money out of any wallet. Large withdrawals may need dual-control approval.'
-            : 'Move money out of an organization wallet. Large amounts need another member to approve.'}
+          {isAdmin ? t('transfers:withdraw.subtitleAdmin') : t('transfers:withdraw.subtitleOrg')}
         </Typography>
       </Stack>
       <TextField
         id="amount"
         name="amount"
-        label="Amount"
+        label={t('common:fields.amount')}
         autoFocus
         required
         value={formValues.amount}
@@ -128,14 +130,16 @@ export default function WithdrawFunds() {
         InputProps={{
           endAdornment: <InputAdornment position="end">₫</InputAdornment>,
         }}
-        helperText="Vietnamese đồng (VND)"
+        helperText={t('transfers:helpers.vnd')}
       />
       <Autocomplete
         ListboxProps={{ style: { maxHeight: 200, overflow: 'auto' } }}
         disablePortal
         id="fromWalletIban"
         loading={loadingWallets}
-        noOptionsText={loadingWallets ? 'Loading…' : 'No wallets'}
+        noOptionsText={
+          loadingWallets ? t('common:status.loading') : t('transfers:helpers.noWallets')
+        }
         options={wallets}
         value={selectedWallet}
         getOptionLabel={(wallet) => {
@@ -145,22 +149,22 @@ export default function WithdrawFunds() {
         }}
         isOptionEqualToValue={(option, value) => option?.iban === value?.iban}
         onChange={handleWalletChange}
-        renderInput={(params) => <TextField {...params} label="Wallet" required />}
+        renderInput={(params) => <TextField {...params} label={t('transfers:fields.wallet')} required />}
       />
       <TextField
         id="description"
         name="description"
-        label="Note"
+        label={t('transfers:fields.note')}
         autoComplete="off"
         required
         value={formValues.description}
         onChange={handleInputChange}
         inputProps={{ maxLength: 50 }}
-        helperText="Max 50 characters"
+        helperText={t('transfers:helpers.noteMax')}
       />
       <Stack spacing={2} direction="row" justifyContent="flex-end" sx={{ pt: 1 }}>
         <Button variant="outlined" onClick={() => navigate('/wallets')} sx={{ cursor: 'pointer' }}>
-          Cancel
+          {t('common:actions.cancel')}
         </Button>
         <LoadingButton
           size="large"
@@ -170,7 +174,7 @@ export default function WithdrawFunds() {
           loading={submitting}
           sx={{ minWidth: 140, cursor: 'pointer' }}
         >
-          Withdraw
+          {t('transfers:withdraw.submit')}
         </LoadingButton>
       </Stack>
     </Stack>

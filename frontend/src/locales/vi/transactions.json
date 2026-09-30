@@ -1,0 +1,58 @@
+{
+  "helmet": "Giao dịch | Digital Purse",
+  "title": "Giao dịch",
+  "titleAdmin": "Tất cả giao dịch",
+  "countOne": "1 giao dịch",
+  "countMany": "{{count}} giao dịch",
+  "countFiltered": "(trong {{total}})",
+  "stats": {
+    "transferred": "Đã chuyển",
+    "withdrawn": "Đã rút",
+    "received": "Đã nhận",
+    "pendingApprovals": "Chờ phê duyệt",
+    "today": "Hôm nay {{amount}}"
+  },
+  "filters": {
+    "walletChip": "Ví: {{name}}"
+  },
+  "table": {
+    "from": "Từ",
+    "to": "Đến",
+    "when": "Thời gian"
+  },
+  "typeOptions": {
+    "all": "Tất cả loại",
+    "transfer": "Chuyển khoản",
+    "withdraw": "Rút tiền",
+    "topUp": "Nạp tiền",
+    "reverse": "Hoàn tác"
+  },
+  "statusOptions": {
+    "all": "Tất cả trạng thái",
+    "success": "Thành công",
+    "pending": "Đang chờ",
+    "failed": "Thất bại",
+    "error": "Lỗi"
+  },
+  "empty": {
+    "none": "Chưa có hoạt động",
+    "noneDescription": "Chuyển khoản, nạp và rút sẽ hiển thị tại đây.",
+    "noMatch": "Không có giao dịch phù hợp bộ lọc",
+    "noMatchDescription": "Thử đổi ví, loại, trạng thái hoặc khoảng ngày, hoặc xóa bộ lọc phía trên.",
+    "goToTransfers": "Đến chuyển khoản"
+  },
+  "pagination": {
+    "rowsPerPage": "Giao dịch mỗi trang"
+  },
+  "walletFallback": "Ví",
+  "reverse": {
+    "success": "Đã hoàn tác giao dịch",
+    "failed": "Hoàn tác thất bại",
+    "pendingApproval": "Hoàn tác đã gửi chờ phê duyệt kiểm soát kép",
+    "dialogTitle": "Hoàn tác giao dịch?",
+    "dialogBody": "Tạo bút toán hoàn tác bù trừ cho #{{id}}{{amountPart}}. Bản ghi gốc vẫn giữ trong lịch sử. Số tiền lớn có thể cần phê duyệt kiểm soát kép.",
+    "reversing": "Đang hoàn tác…",
+    "reversesOf": "của #{{id}}",
+    "reversedBy": "được hoàn tác bởi #{{id}}"
+  }
+}

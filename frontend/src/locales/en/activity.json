@@ -1,0 +1,55 @@
+{
+  "helmet": "Activity | Digital Purse",
+  "title": "Activity",
+  "subtitle": "Security and admin actions for this organization. Visible to OWNER and ADMIN only.",
+  "events": {
+    "all": "All events",
+    "AUTH_LOGIN": "Login",
+    "AUTH_LOGOUT": "Logout",
+    "AUTH_SIGNUP": "Signup",
+    "AUTH_PROFILE_UPDATE": "Profile updated",
+    "AUTH_PASSWORD_CHANGE": "Password changed",
+    "ORG_CREATE": "Org created",
+    "ORG_UPDATE": "Org updated",
+    "ORG_MEMBER_ADD": "Member added",
+    "ORG_MEMBER_ROLE_UPDATE": "Member role",
+    "ORG_MEMBER_REMOVE": "Member removed",
+    "ORG_LIMITS_UPDATE": "Limits updated",
+    "CUSTOMER_CREATE": "Customer created",
+    "CUSTOMER_UPDATE": "Customer updated",
+    "CUSTOMER_ARCHIVE": "Customer archived",
+    "CUSTOMER_LINK_WALLET": "Customer linked",
+    "CUSTOMER_UNLINK_WALLET": "Customer unlinked",
+    "WALLET_CREATE": "Wallet created",
+    "WALLET_UPDATE": "Wallet updated",
+    "WALLET_DELETE": "Wallet deleted",
+    "SPEND_REQUEST_CREATE": "Spend requested",
+    "SPEND_APPROVE": "Spend approved",
+    "SPEND_REJECT": "Spend rejected",
+    "TX_REVERSE": "Transaction reverse"
+  },
+  "table": {
+    "when": "When",
+    "actor": "Actor",
+    "event": "Event",
+    "summary": "Summary",
+    "ip": "IP",
+    "details": "Details"
+  },
+  "empty": {
+    "none": "No activity yet",
+    "noneDescription": "Security and admin actions will appear here as your team works.",
+    "noMatch": "No matching activity",
+    "noMatchDescription": "Try a different event type or date range, or clear filters.",
+    "clearFilters": "Clear filters"
+  },
+  "details": {
+    "title": "Activity details",
+    "event": "Event",
+    "summary": "Summary",
+    "metadata": "Metadata"
+  },
+  "pagination": {
+    "rowsPerPage": "Activity per page"
+  }
+}

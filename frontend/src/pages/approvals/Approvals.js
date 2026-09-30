@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -40,31 +41,17 @@ function maskAccount(account) {
   return `${account.slice(0, 4)}…${account.slice(-4)}`;
 }
 
-function operationLabel(operation) {
+function operationLabel(operation, t) {
   const op = (operation || '').toUpperCase();
-  if (op === 'TRANSFER') return 'Transfer';
-  if (op === 'WITHDRAW') return 'Withdraw';
-  if (op === 'REVERSE') return 'Reverse';
+  if (op === 'TRANSFER') return t('operations.transfer');
+  if (op === 'WITHDRAW') return t('operations.withdraw');
+  if (op === 'REVERSE') return t('operations.reverse');
   return operation || '—';
 }
 
 function sumAmounts(list) {
   return list.reduce((total, row) => total + (Number(row.amount) || 0), 0);
 }
-
-const STATUS_OPTIONS = [
-  { value: '', label: 'All statuses' },
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'APPROVED', label: 'Approved' },
-  { value: 'REJECTED', label: 'Rejected' },
-];
-
-const OPERATION_OPTIONS = [
-  { value: '', label: 'All operations' },
-  { value: 'TRANSFER', label: 'Transfer' },
-  { value: 'WITHDRAW', label: 'Withdraw' },
-  { value: 'REVERSE', label: 'Reverse' },
-];
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25];
 const PAGINATION_SX = {
@@ -109,6 +96,7 @@ function matchesFilters(row, { statusFilter, operationFilter, dateFrom, dateTo }
 }
 
 export default function Approvals() {
+  const { t } = useTranslation(['approvals', 'common']);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
@@ -119,6 +107,25 @@ export default function Approvals() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [actingId, setActingId] = useState(null);
   const navigate = useNavigate();
+
+  const statusOptions = useMemo(
+    () => [
+      { value: '', label: t('filters.statusAll') },
+      { value: 'PENDING', label: t('filters.pending') },
+      { value: 'APPROVED', label: t('filters.approved') },
+      { value: 'REJECTED', label: t('filters.rejected') },
+    ],
+    [t]
+  );
+  const operationOptions = useMemo(
+    () => [
+      { value: '', label: t('filters.operationAll') },
+      { value: 'TRANSFER', label: t('operations.transfer') },
+      { value: 'WITHDRAW', label: t('operations.withdraw') },
+      { value: 'REVERSE', label: t('operations.reverse') },
+    ],
+    [t]
+  );
 
   const filtersActive = Boolean(statusFilter || operationFilter || dateFrom || dateTo);
 
@@ -213,11 +220,11 @@ export default function Approvals() {
       'Idempotency-Key': createIdempotencyKey(),
     })
       .then(() => {
-        enqueueSnackbar('Spend request approved', { variant: 'success' });
+        enqueueSnackbar(t('snackbar.approved'), { variant: 'success' });
         load();
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Approve failed', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('snackbar.approveFailed'), { variant: 'error' });
       })
       .finally(() => setActingId(null));
   };
@@ -226,11 +233,11 @@ export default function Approvals() {
     setActingId(id);
     HttpService.postWithAuth(`/spend-requests/${id}/reject`, null)
       .then(() => {
-        enqueueSnackbar('Spend request rejected', { variant: 'success' });
+        enqueueSnackbar(t('snackbar.rejected'), { variant: 'success' });
         load();
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Reject failed', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('snackbar.rejectFailed'), { variant: 'error' });
       })
       .finally(() => setActingId(null));
   };
@@ -238,14 +245,13 @@ export default function Approvals() {
   return (
     <>
       <Helmet>
-        <title> Approvals | Digital Purse </title>
+        <title>{t('helmet')}</title>
       </Helmet>
       <Container>
         <Stack spacing={0.5} sx={{ mb: 3 }}>
-          <Typography variant="h4">Approvals</Typography>
+          <Typography variant="h4">{t('title')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Dual-control spend for the active organization. Large transfers, withdrawals, and reverses wait
-            here until another OWNER, ADMIN, or APPROVER acts.
+            {t('subtitle')}
           </Typography>
         </Stack>
 
@@ -266,23 +272,23 @@ export default function Approvals() {
           }}
         >
           {queueStats.pendingCount === 1
-            ? '1 pending approval'
-            : `${queueStats.pendingCount} pending approvals`}
+            ? t('stats.pendingCountOne')
+            : t('stats.pendingCountMany', { count: queueStats.pendingCount })}
         </Typography>
 
         <Box sx={{ ...FOUR_COL_GRID_SX, mb: 3 }}>
           <OpsStatCard
-            title="Pending"
+            title={t('stats.pending')}
             value={queueStats.pendingCount}
             format="count"
             icon="eva:clock-outline"
             color="warning"
-            subtitle={queueStats.pendingCount > 0 ? 'Needs dual-control' : undefined}
+            subtitle={queueStats.pendingCount > 0 ? t('stats.needsDualControl') : undefined}
             onClick={() => toggleStatusFilter('PENDING')}
             sx={statusFilter === 'PENDING' ? ACTIVE_STAT_SX : undefined}
           />
           <OpsStatCard
-            title="Approved"
+            title={t('stats.approved')}
             value={queueStats.approvedCount}
             format="count"
             icon="eva:checkmark-circle-2-outline"
@@ -291,7 +297,7 @@ export default function Approvals() {
             sx={statusFilter === 'APPROVED' ? ACTIVE_STAT_SX : undefined}
           />
           <OpsStatCard
-            title="Rejected"
+            title={t('stats.rejected')}
             value={queueStats.rejectedCount}
             format="count"
             icon="eva:close-circle-outline"
@@ -300,7 +306,7 @@ export default function Approvals() {
             sx={statusFilter === 'REJECTED' ? ACTIVE_STAT_SX : undefined}
           />
           <OpsStatCard
-            title="Awaiting"
+            title={t('stats.awaiting')}
             value={queueStats.awaitingAmount}
             format="money"
             icon="eva:diagonal-arrow-right-up-fill"
@@ -321,7 +327,7 @@ export default function Approvals() {
             <TextField
               select
               size="small"
-              label="Status"
+              label={t('common:filters.status')}
               value={statusFilter}
               onChange={(event) => {
                 setStatusFilter(event.target.value);
@@ -329,7 +335,7 @@ export default function Approvals() {
               }}
               sx={{ minWidth: 160 }}
             >
-              {STATUS_OPTIONS.map((opt) => (
+              {statusOptions.map((opt) => (
                 <MenuItem key={opt.value || 'all-statuses'} value={opt.value}>
                   {opt.label}
                 </MenuItem>
@@ -338,7 +344,7 @@ export default function Approvals() {
             <TextField
               select
               size="small"
-              label="Operation"
+              label={t('common:filters.operation')}
               value={operationFilter}
               onChange={(event) => {
                 setOperationFilter(event.target.value);
@@ -346,7 +352,7 @@ export default function Approvals() {
               }}
               sx={{ minWidth: 160 }}
             >
-              {OPERATION_OPTIONS.map((opt) => (
+              {operationOptions.map((opt) => (
                 <MenuItem key={opt.value || 'all-operations'} value={opt.value}>
                   {opt.label}
                 </MenuItem>
@@ -355,7 +361,7 @@ export default function Approvals() {
             <TextField
               size="small"
               type="date"
-              label="From"
+              label={t('common:filters.from')}
               value={dateFrom}
               onChange={(event) => {
                 setDateFrom(event.target.value);
@@ -367,7 +373,7 @@ export default function Approvals() {
             <TextField
               size="small"
               type="date"
-              label="To"
+              label={t('common:filters.to')}
               value={dateTo}
               onChange={(event) => {
                 setDateTo(event.target.value);
@@ -384,26 +390,26 @@ export default function Approvals() {
                 startIcon={<Iconify icon="eva:close-fill" />}
                 sx={{ alignSelf: { xs: 'flex-start', md: 'center' }, cursor: 'pointer' }}
               >
-                Clear
+                {t('common:actions.clear')}
               </Button>
             )}
           </Stack>
 
           {loading ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 6, textAlign: 'center' }}>
-              Loading…
+              {t('common:status.loading')}
             </Typography>
           ) : rows.length === 0 ? (
             <EmptyState
               icon="eva:checkmark-circle-2-outline"
-              title="No spend requests"
-              description="When a transfer, withdrawal, or reverse needs dual-control approval, it will appear here for this organization."
+              title={t('empty.none')}
+              description={t('empty.noneDescription')}
             />
           ) : filteredRows.length === 0 ? (
             <EmptyState
               icon="eva:search-outline"
-              title="No approvals match your filters"
-              description="Try a different status, operation, or date range, or clear the filters above."
+              title={t('empty.noMatch')}
+              description={t('empty.noMatchDescription')}
             />
           ) : (
             <>
@@ -412,23 +418,23 @@ export default function Approvals() {
                   <Table sx={{ minWidth: 800 }}>
                     <TableHead>
                       <TableRow>
-                        <TableCell>Operation</TableCell>
-                        <TableCell align="right">Amount</TableCell>
-                        <TableCell>From → To</TableCell>
-                        <TableCell>Requester</TableCell>
-                        <TableCell>When</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell align="right">Actions</TableCell>
+                        <TableCell>{t('common:fields.operation')}</TableCell>
+                        <TableCell align="right">{t('common:fields.amount')}</TableCell>
+                        <TableCell>{t('table.fromTo')}</TableCell>
+                        <TableCell>{t('table.requester')}</TableCell>
+                        <TableCell>{t('table.when')}</TableCell>
+                        <TableCell>{t('common:filters.status')}</TableCell>
+                        <TableCell align="right">{t('table.actions')}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {pagedRows.map((row) => (
                         <TableRow key={row.id} hover>
                           <TableCell>
-                            <Typography variant="subtitle2">{operationLabel(row.operation)}</Typography>
+                            <Typography variant="subtitle2">{operationLabel(row.operation, t)}</Typography>
                             {row.sourceTransactionId && (
                               <Typography variant="caption" color="text.secondary" display="block">
-                                Source tx #{row.sourceTransactionId}
+                                {t('table.sourceTx', { id: row.sourceTransactionId })}
                               </Typography>
                             )}
                             {row.description && (
@@ -469,7 +475,7 @@ export default function Approvals() {
                                   onClick={() => approve(row.id)}
                                   sx={{ cursor: 'pointer' }}
                                 >
-                                  {actingId === row.id ? 'Working…' : 'Approve'}
+                                  {actingId === row.id ? t('actions.working') : t('common:actions.approve')}
                                 </Button>
                                 <Button
                                   size="small"
@@ -479,7 +485,7 @@ export default function Approvals() {
                                   onClick={() => reject(row.id)}
                                   sx={{ cursor: 'pointer' }}
                                 >
-                                  Reject
+                                  {t('common:actions.reject')}
                                 </Button>
                               </Stack>
                             )}
@@ -501,7 +507,7 @@ export default function Approvals() {
                   setRowsPerPage(parseInt(event.target.value, 10));
                   setPage(0);
                 }}
-                labelRowsPerPage="Approvals per page"
+                labelRowsPerPage={t('pagination.rowsPerPage')}
                 sx={PAGINATION_SX}
               />
             </>

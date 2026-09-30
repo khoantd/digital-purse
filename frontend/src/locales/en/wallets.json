@@ -1,0 +1,100 @@
+{
+  "helmet": "Wallets | Digital Purse",
+  "title": "Wallets",
+  "titleAdmin": "All Wallets",
+  "subtitle": "Organization and customer wallets for the active business.",
+  "subtitleAdmin": "All wallets across organizations. Filter by owner type.",
+  "stats": {
+    "total": "Total",
+    "organization": "Organization",
+    "customer": "Customer"
+  },
+  "filters": {
+    "searchPlaceholder": "Search by name or account…",
+    "searchPlaceholderExtended": "Name, account, customer",
+    "typeAll": "All types",
+    "typeFilterAria": "Filter by wallet type",
+    "organization": "Organization",
+    "customer": "Customer"
+  },
+  "empty": {
+    "none": "No wallets yet",
+    "noneDescription": "Create a wallet to start moving money.",
+    "noneDescriptionOrg": "Create the first wallet for this organization. A Vietnam account number is assigned automatically.",
+    "adminNoneDescription": "No wallets have been created yet.",
+    "noMatch": "No wallets match",
+    "noMatchDescription": "Try adjusting search or type filters.",
+    "filterHint": "Try a different search or type filter, or use Clear above to see all wallets."
+  },
+  "actions": {
+    "newWallet": "New wallet",
+    "viewTransactions": "View transactions"
+  },
+  "pagination": {
+    "rowsPerPage": "Wallets per page",
+    "showing": "Showing {{filtered}} of {{total}} {{unit}}",
+    "wallet": "wallet",
+    "wallets": "wallets"
+  },
+  "menu": {
+    "actionsFor": "Actions for {{name}}"
+  },
+  "messages": {
+    "accountCopied": "Account number copied",
+    "copyFailed": "Could not copy account number",
+    "nameLength": "Wallet name must be 3–50 characters",
+    "walletUpdated": "Wallet updated",
+    "loadFailed": "Could not load wallets"
+  },
+  "dialog": {
+    "detailsTitle": "Wallet details",
+    "editTitle": "Edit wallet",
+    "rename": "Rename wallet",
+    "copyAccount": "Copy account number",
+    "copied": "Copied",
+    "accountNumber": "Account number",
+    "ownerUser": "Owner user"
+  },
+  "edit": {
+    "walletName": "Wallet name",
+    "nameHelper": "3–50 characters",
+    "accountHelper": "Assigned by the system and cannot be changed",
+    "balanceHelper": "Change balance via Add funds, Transfer, or Withdraw",
+    "ownerType": "Owner type"
+  },
+  "table": {
+    "id": "Id",
+    "name": "Name",
+    "type": "Type",
+    "balance": "Balance",
+    "currency": "Currency",
+    "user": "User",
+    "account": "Account"
+  },
+  "newWalletPage": {
+    "helmet": "New Wallet | Digital Purse",
+    "title": "New wallet",
+    "subtitle": "Choose whether this wallet is for the organization or a customer contact, then set a name and starting balance. A Vietnam account number (VN) is assigned automatically.",
+    "ownerType": "Owner type",
+    "customerHelper": "Active customers in the current organization",
+    "startingBalance": "Starting balance",
+    "balanceHelper": "Vietnamese đồng (VND), whole amounts",
+    "footnote": "Account number is generated on the server (VND · VietQR-ready). Owner type is a label only; access stays org-scoped.",
+    "create": "Create wallet",
+    "selectCustomer": "Select a customer for this wallet",
+    "balancePositive": "Starting balance must be greater than zero",
+    "created": "Wallet created successfully"
+  },
+  "receivePage": {
+    "helmet": "Receive | Digital Purse",
+    "title": "Receive with VietQR",
+    "subtitle": "Show this QR so others can pay into an organization VND wallet (demo Mock rail — not a live bank transfer).",
+    "empty": "Create a wallet first to generate a VietQR code.",
+    "qrAlt": "VietQR for {{name}}",
+    "demoBin": "{{currency}} · Demo bank BIN 970436",
+    "copyPayload": "Copy VietQR payload",
+    "goToTransfers": "Go to transfers",
+    "payloadCopied": "VietQR payload copied",
+    "copyFailed": "Could not copy"
+  }
+}

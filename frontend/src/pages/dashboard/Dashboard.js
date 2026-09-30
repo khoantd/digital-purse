@@ -2,6 +2,7 @@ import { Box, Card, Container, Grid, Stack, Typography } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
 import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   BalanceHero,
@@ -29,6 +30,7 @@ const EMPTY_STATS = {
 };
 
 export default function Dashboard() {
+  const { t } = useTranslation(['dashboard', 'common']);
   const navigate = useNavigate();
   const [wallets, setWallets] = useState([]);
   const [stats, setStats] = useState(EMPTY_STATS);
@@ -36,7 +38,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const isAdmin = AuthService.isAdmin();
   const user = AuthService.getCurrentUser();
-  const firstName = user?.firstName || user?.username || 'there';
+  const firstName = user?.firstName || user?.username || t('greetingFallback');
 
   useEffect(() => {
     const userId = AuthService.getCurrentUser()?.id;
@@ -146,35 +148,35 @@ export default function Dashboard() {
   const opsStatsRow = showOpsStats ? (
     <Box sx={fourColGridSx}>
       <OpsStatCard
-        title="Transferred"
+        title={t('dashboard:stats.transferred')}
         value={stats.transferTotal}
         icon="eva:swap-outline"
         color="info"
         subtitle={
           stats.todayOutboundTotal
-            ? `Today outbound ${fCurrency(stats.todayOutboundTotal)}`
+            ? t('dashboard:stats.todayOutbound', { amount: fCurrency(stats.todayOutboundTotal) })
             : undefined
         }
       />
       <OpsStatCard
-        title="Withdrawn"
+        title={t('dashboard:stats.withdrawn')}
         value={stats.withdrawTotal}
         icon="eva:arrow-upward-fill"
         color="warning"
       />
       <OpsStatCard
-        title="Received"
+        title={t('dashboard:stats.received')}
         value={stats.receiveTotal}
         icon="eva:arrow-downward-fill"
         color="success"
         subtitle={
           stats.todayTopUpTotal
-            ? `Today ${fCurrency(stats.todayTopUpTotal)}`
+            ? t('dashboard:stats.today', { amount: fCurrency(stats.todayTopUpTotal) })
             : undefined
         }
       />
       <OpsStatCard
-        title="Pending approvals"
+        title={t('dashboard:stats.pendingApprovals')}
         value={stats.pendingApprovals}
         format="count"
         icon="eva:checkmark-circle-2-outline"
@@ -188,19 +190,19 @@ export default function Dashboard() {
     <Box sx={fourColGridSx}>
       <QuickActionButton
         icon="eva:plus-fill"
-        label="Add funds"
+        label={t('dashboard:quickActions.addFunds')}
         color="success"
         onClick={() => navigate('/transfers?tab=add')}
       />
       <QuickActionButton
         icon="eva:swap-outline"
-        label="Transfer"
+        label={t('dashboard:quickActions.transfer')}
         color="primary"
         onClick={() => navigate('/transfers?tab=send')}
       />
       <QuickActionButton
         icon="eva:arrow-downward-fill"
-        label="Withdraw"
+        label={t('dashboard:quickActions.withdraw')}
         color="warning"
         onClick={() => navigate('/transfers?tab=withdraw')}
       />
@@ -210,15 +212,13 @@ export default function Dashboard() {
   return (
     <>
       <Helmet>
-        <title> Home | Digital Purse </title>
+        <title>{t('dashboard:helmet')}</title>
       </Helmet>
       <Container maxWidth="xl">
         <Stack spacing={0.5} sx={{ mb: 3 }}>
-          <Typography variant="h4">Hi {firstName}</Typography>
+          <Typography variant="h4">{t('dashboard:greeting', { name: firstName })}</Typography>
           <Typography variant="body2" color="text.secondary">
-            {isAdmin
-              ? 'Admin overview of wallets and activity.'
-              : 'Organization balance and quick actions for the active business.'}
+            {isAdmin ? t('dashboard:subtitleAdmin') : t('dashboard:subtitleOrg')}
           </Typography>
         </Stack>
 
@@ -235,14 +235,14 @@ export default function Dashboard() {
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6} md={3}>
                 <AppWidgetSummary
-                  title="Wallets"
+                  title={t('dashboard:stats.wallets')}
                   total={wallets.length}
                   icon="ant-design:wallet-outlined"
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <AppWidgetSummary
-                  title="Users with wallets"
+                  title={t('dashboard:stats.usersWithWallets')}
                   total={uniqueUsers}
                   color="warning"
                   icon="ant-design:user-outlined"
@@ -250,7 +250,7 @@ export default function Dashboard() {
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <AppWidgetSummary
-                  title="Total balance"
+                  title={t('dashboard:stats.totalBalance')}
                   total={totalBalance}
                   color="info"
                   icon="ant-design:money-collect-outlined"
@@ -260,12 +260,12 @@ export default function Dashboard() {
                   color="text.secondary"
                   sx={{ display: 'block', mt: 1, px: 1 }}
                 >
-                  Exact: {fCurrency(totalBalance)}
+                  {t('dashboard:stats.exact', { amount: fCurrency(totalBalance) })}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <AppWidgetSummary
-                  title="Transactions"
+                  title={t('dashboard:stats.transactions')}
                   total={txCount}
                   color="error"
                   icon="ant-design:transaction-outlined"
@@ -279,16 +279,16 @@ export default function Dashboard() {
         {loading ? (
           <Card sx={{ p: 2.5, borderRadius: 2 }}>
             <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-              Loading…
+              {t('common:status.loading')}
             </Typography>
           </Card>
         ) : wallets.length === 0 ? (
           <Card sx={{ p: 2.5, borderRadius: 2 }}>
             <EmptyState
               icon="ant-design:wallet-outlined"
-              title="No wallets yet"
-              description="Create a wallet to start adding funds and transferring money."
-              actionLabel="New wallet"
+              title={t('dashboard:wallets.emptyTitle')}
+              description={t('dashboard:wallets.emptyDescription')}
+              actionLabel={t('dashboard:wallets.newWallet')}
               onAction={() => navigate('/wallets/new')}
             />
           </Card>
@@ -296,20 +296,20 @@ export default function Dashboard() {
           <Stack spacing={2}>
             <Box>
               <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                <Typography variant="h5">Organization Wallets</Typography>
+                <Typography variant="h5">{t('dashboard:wallets.organizationSection')}</Typography>
                 <Typography
                   variant="subtitle2"
                   color="primary"
                   onClick={() => navigate('/wallets')}
                   sx={{ cursor: 'pointer' }}
                 >
-                  View all
+                  {t('common:actions.viewAll')}
                 </Typography>
               </Stack>
               <Card sx={{ p: 2.5, borderRadius: 2 }}>
                 {organizationWallets.length === 0 ? (
                   <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                    No organization wallets yet.
+                    {t('dashboard:wallets.noOrgWallets')}
                   </Typography>
                 ) : (
                   <Grid container spacing={2}>
@@ -321,12 +321,12 @@ export default function Dashboard() {
 
             <Box>
               <Typography variant="h5" sx={{ mb: 2 }}>
-                Customers&apos; Wallets
+                {t('dashboard:wallets.customerSection')}
               </Typography>
               <Card sx={{ p: 2.5, borderRadius: 2 }}>
                 {customerWallets.length === 0 ? (
                   <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                    No customer wallets yet.
+                    {t('dashboard:wallets.noCustomerWallets')}
                   </Typography>
                 ) : (
                   <Grid container spacing={2}>
@@ -341,7 +341,7 @@ export default function Dashboard() {
         {!isAdmin && wallets.length > 0 && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary">
-              Tip: open a wallet to view its transactions, or use Transfers to send, add, or withdraw.
+              {t('common:tip.walletTransactions')}
             </Typography>
           </Box>
         )}

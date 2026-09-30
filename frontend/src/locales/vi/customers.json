@@ -1,0 +1,67 @@
+{
+  "helmet": "Khách hàng | Digital Purse",
+  "title": "Khách hàng",
+  "subtitle": "Danh bạ đối tác thanh toán của tổ chức. Liên kết tài khoản Digital Purse để chuyển nhanh hơn.",
+  "stats": {
+    "active": "Đang hoạt động",
+    "archived": "Đã lưu trữ",
+    "linked": "Đã liên kết",
+    "unlinked": "Chưa liên kết",
+    "activeCountOne": "1 khách hàng đang hoạt động",
+    "activeCountMany": "{{count}} khách hàng đang hoạt động"
+  },
+  "filters": {
+    "searchPlaceholder": "Tên",
+    "statusActive": "Đang hoạt động",
+    "statusArchived": "Đã lưu trữ",
+    "statusAll": "Tất cả trạng thái",
+    "linkedAll": "Tất cả liên kết",
+    "linkedYes": "Đã liên kết",
+    "linkedNo": "Chưa liên kết"
+  },
+  "table": {
+    "phone": "Điện thoại",
+    "linkedAccount": "Tài khoản liên kết",
+    "taxIdPrefix": "MST: {{value}}"
+  },
+  "empty": {
+    "none": "Chưa có khách hàng",
+    "noneDescription": "Thêm đối tác thanh toán, sau đó có thể liên kết số tài khoản Digital Purse.",
+    "noSearch": "Không tìm thấy khách hàng",
+    "noSearchDescription": "Thử tên khác hoặc xóa tìm kiếm để xem toàn bộ danh bạ.",
+    "noFilter": "Không có khách hàng phù hợp bộ lọc",
+    "noFilterDescription": "Thử đổi trạng thái hoặc bộ lọc liên kết, hoặc xóa bộ lọc phía trên."
+  },
+  "actions": {
+    "addCustomer": "Thêm khách hàng",
+    "newCustomer": "Khách hàng mới",
+    "edit": "Sửa khách hàng",
+    "linkWallet": "Liên kết ví",
+    "unlinkWallet": "Gỡ liên kết ví",
+    "archive": "Lưu trữ",
+    "link": "Liên kết"
+  },
+  "dialogs": {
+    "linkTitle": "Liên kết Digital Purse",
+    "accountNumber": "Số tài khoản",
+    "accountHelper": "Số tài khoản Digital Purse đã có trên hệ thống",
+    "accountPlaceholder": "VN…"
+  },
+  "pagination": {
+    "rowsPerPage": "Khách hàng mỗi trang"
+  },
+  "walletNameFallback": "Ví",
+  "snackbar": {
+    "nameMinLength": "Tên phải có ít nhất 2 ký tự",
+    "customerUpdated": "Đã cập nhật khách hàng",
+    "customerCreated": "Đã tạo khách hàng",
+    "saveFailed": "Lưu thất bại",
+    "enterAccountNumber": "Nhập số tài khoản",
+    "walletLinked": "Đã liên kết ví",
+    "linkFailed": "Liên kết thất bại",
+    "walletUnlinked": "Đã gỡ liên kết ví",
+    "unlinkFailed": "Gỡ liên kết thất bại",
+    "customerArchived": "Đã lưu trữ khách hàng",
+    "archiveFailed": "Lưu trữ thất bại"
+  }
+}

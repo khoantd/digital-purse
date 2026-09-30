@@ -101,6 +101,8 @@ export default function App() {
               <Route index element={<Settings />} />
             </Route>
           </Route>
+
+          <Route path="profile" element={<Navigate to="/settings?tab=profile" replace />} />
         </Route>
       </Route>
     </Routes>

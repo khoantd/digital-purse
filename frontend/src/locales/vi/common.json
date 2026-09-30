@@ -1,0 +1,112 @@
+{
+  "appName": "Digital Purse",
+  "brandSuffix": "Digital Purse",
+  "actions": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "clear": "Xóa bộ lọc",
+    "search": "Tìm kiếm",
+    "close": "Đóng",
+    "submit": "Gửi",
+    "confirm": "Xác nhận",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "details": "Chi tiết",
+    "detailsFor": "Xem chi tiết {{name}}",
+    "viewAll": "Xem tất cả",
+    "view": "Xem",
+    "working": "Đang xử lý…",
+    "clearFilters": "Xóa bộ lọc",
+    "updatePassword": "Cập nhật mật khẩu",
+    "linkWallet": "Liên kết ví",
+    "unlinkWallet": "Gỡ liên kết ví",
+    "archive": "Lưu trữ",
+    "new": "Tạo mới",
+    "copy": "Sao chép",
+    "retry": "Thử lại",
+    "logout": "Đăng xuất",
+    "goHome": "Về trang chủ",
+    "approve": "Phê duyệt",
+    "reject": "Từ chối",
+    "reverse": "Hoàn tác",
+    "add": "Thêm",
+    "invite": "Mời thành viên",
+    "remove": "Gỡ bỏ",
+    "changeRole": "Đổi vai trò",
+    "editFor": "Sửa {{name}}"
+  },
+  "status": {
+    "loading": "Đang tải…",
+    "saving": "Đang lưu…",
+    "active": "Đang hoạt động",
+    "archived": "Đã lưu trữ",
+    "all": "Tất cả",
+    "success": "Thành công",
+    "pending": "Đang chờ",
+    "failed": "Thất bại"
+  },
+  "filters": {
+    "from": "Từ ngày",
+    "to": "Đến ngày",
+    "type": "Loại",
+    "status": "Trạng thái",
+    "operation": "Thao tác",
+    "eventType": "Loại sự kiện",
+    "linked": "Liên kết ví",
+    "search": "Tìm kiếm",
+    "clear": "Xóa bộ lọc",
+    "allTypes": "Tất cả loại",
+    "allStatuses": "Tất cả trạng thái",
+    "allEvents": "Tất cả sự kiện"
+  },
+  "pagination": {
+    "rowsPerPage": "Số dòng mỗi trang:"
+  },
+  "fields": {
+    "name": "Tên",
+    "email": "Email",
+    "username": "Tên đăng nhập",
+    "password": "Mật khẩu",
+    "firstName": "Họ",
+    "lastName": "Tên",
+    "balance": "Số dư",
+    "account": "Số tài khoản",
+    "currency": "Loại tiền",
+    "amount": "Số tiền",
+    "description": "Mô tả",
+    "phone": "Điện thoại",
+    "notes": "Ghi chú",
+    "when": "Thời gian",
+    "summary": "Tóm tắt",
+    "metadata": "Siêu dữ liệu",
+    "linkedAccount": "Tài khoản liên kết",
+    "member": "Thành viên",
+    "operation": "Thao tác",
+    "requester": "Người yêu cầu",
+    "role": "Vai trò",
+    "id": "Mã",
+    "user": "Người dùng",
+    "taxId": "Mã số thuế",
+    "organizationId": "Mã tổ chức",
+    "organizationName": "Tên tổ chức"
+  },
+  "ownerType": {
+    "organization": "Tổ chức",
+    "customer": "Khách hàng",
+    "customerNamed": "Khách hàng · {{name}}"
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc"
+  },
+  "empty": {
+    "noData": "Không có dữ liệu"
+  },
+  "tip": {
+    "walletTransactions": "Gợi ý: mở ví để xem giao dịch, hoặc dùng Chuyển tiền để gửi, nạp hoặc rút."
+  },
+  "balanceHero": {
+    "totalBalance": "Tổng số dư",
+    "acrossOne": "Trên 1 ví",
+    "acrossMany": "Trên {{count}} ví"
+  }
+}

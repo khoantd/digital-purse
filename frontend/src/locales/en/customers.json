@@ -1,0 +1,67 @@
+{
+  "helmet": "Customers | Digital Purse",
+  "title": "Customers",
+  "subtitle": "Payee contacts for the active organization. Link a Digital Purse account to speed up transfers.",
+  "stats": {
+    "active": "Active",
+    "archived": "Archived",
+    "linked": "Linked",
+    "unlinked": "Unlinked",
+    "activeCountOne": "1 active customer",
+    "activeCountMany": "{{count}} active customers"
+  },
+  "filters": {
+    "searchPlaceholder": "Name",
+    "statusActive": "Active",
+    "statusArchived": "Archived",
+    "statusAll": "All statuses",
+    "linkedAll": "All links",
+    "linkedYes": "Linked",
+    "linkedNo": "Unlinked"
+  },
+  "table": {
+    "phone": "Phone",
+    "linkedAccount": "Linked account",
+    "taxIdPrefix": "Tax ID: {{value}}"
+  },
+  "empty": {
+    "none": "No customers yet",
+    "noneDescription": "Add a payee contact, then optionally link their Digital Purse account number.",
+    "noSearch": "No customers match your search",
+    "noSearchDescription": "Try a different name, or clear the search to see the full directory.",
+    "noFilter": "No customers match your filters",
+    "noFilterDescription": "Try a different status or linked filter, or clear the filters above."
+  },
+  "actions": {
+    "addCustomer": "Add customer",
+    "newCustomer": "New customer",
+    "edit": "Edit customer",
+    "linkWallet": "Link wallet",
+    "unlinkWallet": "Unlink wallet",
+    "archive": "Archive",
+    "link": "Link"
+  },
+  "dialogs": {
+    "linkTitle": "Link Digital Purse",
+    "accountNumber": "Account number",
+    "accountHelper": "Existing Digital Purse account number in the system",
+    "accountPlaceholder": "VN…"
+  },
+  "pagination": {
+    "rowsPerPage": "Customers per page"
+  },
+  "walletNameFallback": "Wallet",
+  "snackbar": {
+    "nameMinLength": "Name must be at least 2 characters",
+    "customerUpdated": "Customer updated",
+    "customerCreated": "Customer created",
+    "saveFailed": "Save failed",
+    "enterAccountNumber": "Enter an account number",
+    "walletLinked": "Wallet linked",
+    "linkFailed": "Link failed",
+    "walletUnlinked": "Wallet unlinked",
+    "unlinkFailed": "Unlink failed",
+    "customerArchived": "Customer archived",
+    "archiveFailed": "Archive failed"
+  }
+}

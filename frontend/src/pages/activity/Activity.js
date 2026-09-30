@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -33,35 +34,39 @@ import OrganizationContext from '../../services/OrganizationContext';
 import { ensureActiveOrganization } from '../../services/ensureOrganization';
 import { fDateTime, parseDateInputEnd, parseDateInputStart, toDate } from '../../utils/formatTime';
 
-const EVENT_OPTIONS = [
-  { value: '', label: 'All events' },
-  { value: 'AUTH_LOGIN', label: 'Login' },
-  { value: 'AUTH_LOGOUT', label: 'Logout' },
-  { value: 'AUTH_SIGNUP', label: 'Signup' },
-  { value: 'ORG_CREATE', label: 'Org created' },
-  { value: 'ORG_UPDATE', label: 'Org updated' },
-  { value: 'ORG_MEMBER_ADD', label: 'Member added' },
-  { value: 'ORG_MEMBER_ROLE_UPDATE', label: 'Member role' },
-  { value: 'ORG_MEMBER_REMOVE', label: 'Member removed' },
-  { value: 'ORG_LIMITS_UPDATE', label: 'Limits updated' },
-  { value: 'CUSTOMER_CREATE', label: 'Customer created' },
-  { value: 'CUSTOMER_UPDATE', label: 'Customer updated' },
-  { value: 'CUSTOMER_ARCHIVE', label: 'Customer archived' },
-  { value: 'CUSTOMER_LINK_WALLET', label: 'Customer linked' },
-  { value: 'CUSTOMER_UNLINK_WALLET', label: 'Customer unlinked' },
-  { value: 'WALLET_CREATE', label: 'Wallet created' },
-  { value: 'WALLET_UPDATE', label: 'Wallet updated' },
-  { value: 'WALLET_DELETE', label: 'Wallet deleted' },
-  { value: 'SPEND_REQUEST_CREATE', label: 'Spend requested' },
-  { value: 'SPEND_APPROVE', label: 'Spend approved' },
-  { value: 'SPEND_REJECT', label: 'Spend rejected' },
-  { value: 'TX_REVERSE', label: 'Transaction reverse' },
+const EVENT_VALUES = [
+  '',
+  'AUTH_LOGIN',
+  'AUTH_LOGOUT',
+  'AUTH_SIGNUP',
+  'AUTH_PROFILE_UPDATE',
+  'AUTH_PASSWORD_CHANGE',
+  'ORG_CREATE',
+  'ORG_UPDATE',
+  'ORG_MEMBER_ADD',
+  'ORG_MEMBER_ROLE_UPDATE',
+  'ORG_MEMBER_REMOVE',
+  'ORG_LIMITS_UPDATE',
+  'CUSTOMER_CREATE',
+  'CUSTOMER_UPDATE',
+  'CUSTOMER_ARCHIVE',
+  'CUSTOMER_LINK_WALLET',
+  'CUSTOMER_UNLINK_WALLET',
+  'WALLET_CREATE',
+  'WALLET_UPDATE',
+  'WALLET_DELETE',
+  'SPEND_REQUEST_CREATE',
+  'SPEND_APPROVE',
+  'SPEND_REJECT',
+  'TX_REVERSE',
 ];
 
 const EVENT_COLORS = {
   AUTH_LOGIN: 'info',
   AUTH_LOGOUT: 'default',
   AUTH_SIGNUP: 'info',
+  AUTH_PROFILE_UPDATE: 'info',
+  AUTH_PASSWORD_CHANGE: 'warning',
   ORG_CREATE: 'primary',
   ORG_UPDATE: 'primary',
   ORG_MEMBER_ADD: 'success',
@@ -90,8 +95,9 @@ const PAGINATION_SX = {
   '& .MuiInputBase-root': { cursor: 'pointer' },
 };
 
-function eventLabel(eventType) {
-  return EVENT_OPTIONS.find((opt) => opt.value === eventType)?.label || eventType || '—';
+function eventLabel(eventType, t) {
+  if (!eventType) return t('events.all');
+  return t(`events.${eventType}`, { defaultValue: eventType || '—' });
 }
 
 function actorDisplay(row) {
@@ -124,6 +130,7 @@ function canViewActivity(role) {
 }
 
 export default function Activity() {
+  const { t } = useTranslation(['activity', 'common']);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [allowed, setAllowed] = useState(null);
@@ -135,6 +142,15 @@ export default function Activity() {
   const [detailRow, setDetailRow] = useState(null);
   const [loadError, setLoadError] = useState('');
   const navigate = useNavigate();
+
+  const eventOptions = useMemo(
+    () =>
+      EVENT_VALUES.map((value) => ({
+        value,
+        label: eventLabel(value, t),
+      })),
+    [t]
+  );
 
   const filtersActive = Boolean(eventFilter || dateFrom || dateTo);
 
@@ -221,15 +237,15 @@ export default function Activity() {
   return (
     <>
       <Helmet>
-        <title> Activity | Digital Purse </title>
+        <title>{t('helmet')}</title>
       </Helmet>
       <Container>
         <Stack spacing={0.5} sx={{ mb: 3 }}>
           <Typography variant="h4" component="h1">
-            Activity
+            {t('title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Security and admin actions for this organization. Visible to OWNER and ADMIN only.
+            {t('subtitle')}
           </Typography>
         </Stack>
 
@@ -250,7 +266,7 @@ export default function Activity() {
             <TextField
               select
               size="small"
-              label="Event type"
+              label={t('common:filters.eventType')}
               value={eventFilter}
               onChange={(event) => {
                 setEventFilter(event.target.value);
@@ -258,7 +274,7 @@ export default function Activity() {
               }}
               sx={{ minWidth: 180 }}
             >
-              {EVENT_OPTIONS.map((opt) => (
+              {eventOptions.map((opt) => (
                 <MenuItem key={opt.value || 'all-events'} value={opt.value}>
                   {opt.label}
                 </MenuItem>
@@ -267,7 +283,7 @@ export default function Activity() {
             <TextField
               size="small"
               type="date"
-              label="From"
+              label={t('common:filters.from')}
               value={dateFrom}
               onChange={(event) => {
                 setDateFrom(event.target.value);
@@ -279,7 +295,7 @@ export default function Activity() {
             <TextField
               size="small"
               type="date"
-              label="To"
+              label={t('common:filters.to')}
               value={dateTo}
               onChange={(event) => {
                 setDateTo(event.target.value);
@@ -296,27 +312,27 @@ export default function Activity() {
                 startIcon={<Iconify icon="eva:close-fill" />}
                 sx={{ alignSelf: { xs: 'flex-start', md: 'center' }, cursor: 'pointer' }}
               >
-                Clear
+                {t('common:actions.clear')}
               </Button>
             )}
           </Stack>
 
           {loading || allowed == null ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 6, textAlign: 'center' }}>
-              Loading…
+              {t('common:status.loading')}
             </Typography>
           ) : rows.length === 0 ? (
             <EmptyState
               icon="eva:clock-outline"
-              title="No activity yet"
-              description="Security and admin actions will appear here as your team works."
+              title={t('empty.none')}
+              description={t('empty.noneDescription')}
             />
           ) : filteredRows.length === 0 ? (
             <EmptyState
               icon="eva:search-outline"
-              title="No matching activity"
-              description="Try a different event type or date range, or clear filters."
-              actionLabel="Clear filters"
+              title={t('empty.noMatch')}
+              description={t('empty.noMatchDescription')}
+              actionLabel={t('empty.clearFilters')}
               onAction={clearFilters}
             />
           ) : (
@@ -326,12 +342,12 @@ export default function Activity() {
                   <Table size="small" sx={{ minWidth: 800 }}>
                     <TableHead>
                       <TableRow>
-                        <TableCell>When</TableCell>
-                        <TableCell>Actor</TableCell>
-                        <TableCell>Event</TableCell>
-                        <TableCell>Summary</TableCell>
-                        <TableCell>IP</TableCell>
-                        <TableCell align="right">Details</TableCell>
+                        <TableCell>{t('table.when')}</TableCell>
+                        <TableCell>{t('table.actor')}</TableCell>
+                        <TableCell>{t('table.event')}</TableCell>
+                        <TableCell>{t('table.summary')}</TableCell>
+                        <TableCell>{t('table.ip')}</TableCell>
+                        <TableCell align="right">{t('table.details')}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -352,7 +368,7 @@ export default function Activity() {
                             </TableCell>
                             <TableCell>
                               <Label color={EVENT_COLORS[row.eventType] || 'default'}>
-                                {eventLabel(row.eventType)}
+                                {eventLabel(row.eventType, t)}
                               </Label>
                             </TableCell>
                             <TableCell>{row.summary || '—'}</TableCell>
@@ -365,7 +381,7 @@ export default function Activity() {
                                 onClick={() => setDetailRow(row)}
                                 sx={{ cursor: 'pointer' }}
                               >
-                                View
+                                {t('common:actions.view')}
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -386,7 +402,7 @@ export default function Activity() {
                   setRowsPerPage(parseInt(event.target.value, 10));
                   setPage(0);
                 }}
-                labelRowsPerPage="Activity per page"
+                labelRowsPerPage={t('pagination.rowsPerPage')}
                 sx={PAGINATION_SX}
               />
             </>
@@ -399,25 +415,25 @@ export default function Activity() {
           fullWidth
           maxWidth="sm"
         >
-          <DialogTitle>Activity details</DialogTitle>
+          <DialogTitle>{t('details.title')}</DialogTitle>
           <DialogContent dividers>
             {detailRow ? (
               <Stack spacing={1.5}>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Event
+                    {t('details.event')}
                   </Typography>
-                  <Typography variant="body2">{eventLabel(detailRow.eventType)}</Typography>
+                  <Typography variant="body2">{eventLabel(detailRow.eventType, t)}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Summary
+                    {t('details.summary')}
                   </Typography>
                   <Typography variant="body2">{detailRow.summary}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Metadata
+                    {t('details.metadata')}
                   </Typography>
                   <Box
                     component="pre"
@@ -440,7 +456,7 @@ export default function Activity() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDetailRow(null)} sx={{ cursor: 'pointer' }}>
-              Close
+              {t('common:actions.close')}
             </Button>
           </DialogActions>
         </Dialog>

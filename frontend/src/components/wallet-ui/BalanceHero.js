@@ -1,8 +1,15 @@
 import PropTypes from 'prop-types';
 import { Box, Card, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { fCurrency } from '../../utils/formatNumber';
 
 export default function BalanceHero({ total, walletCount, subtitle }) {
+  const { t } = useTranslation('common');
+  const defaultSubtitle =
+    walletCount === 1
+      ? t('balanceHero.acrossOne')
+      : t('balanceHero.acrossMany', { count: walletCount || 0 });
+
   return (
     <Card
       sx={{
@@ -16,16 +23,13 @@ export default function BalanceHero({ total, walletCount, subtitle }) {
     >
       <Stack spacing={1}>
         <Typography variant="overline" sx={{ opacity: 0.8, letterSpacing: 1.2 }}>
-          Total balance
+          {t('balanceHero.totalBalance')}
         </Typography>
         <Typography variant="h2" sx={{ fontWeight: 700, lineHeight: 1.15 }}>
           {fCurrency(total)}
         </Typography>
         <Typography variant="body2" sx={{ opacity: 0.85 }}>
-          {subtitle ||
-            (walletCount === 1
-              ? 'Across 1 wallet'
-              : `Across ${walletCount || 0} wallets`)}
+          {subtitle || defaultSubtitle}
         </Typography>
       </Stack>
       <Box

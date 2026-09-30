@@ -23,6 +23,7 @@ import {
 import { sentenceCase } from 'change-case';
 import { enqueueSnackbar } from 'notistack';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Iconify from '../../components/iconify';
@@ -106,31 +107,26 @@ function matchesSpendFilters(row, { typeFilter, statusFilter, dateFrom, dateTo, 
   return true;
 }
 
-const TABLE_HEAD = [
-  { id: 'type', label: 'Type', alignRight: false, firstColumn: true },
-  { id: 'fromWallet', label: 'From', alignRight: false },
-  { id: 'toWallet', label: 'To', alignRight: false },
-  { id: 'amount', label: 'Amount', alignRight: true },
-  { id: 'description', label: 'Description', alignRight: false },
-  { id: 'createdAt', label: 'When', alignRight: false },
-  { id: 'status', label: 'Status', alignRight: false },
-  { id: 'actions', label: '', alignRight: true },
-];
+function translateTransactionType(typeName, t) {
+  const map = {
+    Transfer: 'transfer',
+    Withdraw: 'withdraw',
+    'Top-up': 'topUp',
+    Reverse: 'reverse',
+  };
+  const key = map[typeName];
+  return key ? t(`typeOptions.${key}`) : typeName;
+}
 
-const TYPE_OPTIONS = [
-  { value: '', label: 'All types' },
-  { value: 'Transfer', label: 'Transfer' },
-  { value: 'Withdraw', label: 'Withdraw' },
-  { value: 'Top-up', label: 'Top-up' },
-  { value: 'Reverse', label: 'Reverse' },
-];
-
-const STATUS_OPTIONS = [
-  { value: '', label: 'All statuses' },
-  { value: 'SUCCESS', label: 'Success' },
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'ERROR', label: 'Error' },
-];
+function translateTransactionStatus(status, t) {
+  const map = {
+    SUCCESS: 'success',
+    PENDING: 'pending',
+    ERROR: 'error',
+  };
+  const key = map[status];
+  return key ? t(`statusOptions.${key}`) : sentenceCase(status || 'unknown');
+}
 
 function typeTone(typeName) {
   const name = (typeName || '').toLowerCase();
@@ -191,11 +187,11 @@ function statusColor(status) {
 }
 
 /** Prefer wallet name from WalletResponse; fall back to owner then account id. */
-function walletCell(wallet) {
+function walletCell(wallet, walletFallback) {
   if (!wallet) {
     return { title: '—', subtitle: '' };
   }
-  const title = wallet.name || wallet.user?.fullName || 'Wallet';
+  const title = wallet.name || wallet.user?.fullName || walletFallback;
   const account = wallet.iban
     ? wallet.iban.length > 12
       ? `${wallet.iban.slice(0, 4)}…${wallet.iban.slice(-4)}`
@@ -254,6 +250,7 @@ function walletMetaFromRows(rows, walletId) {
 }
 
 export default function Transaction() {
+  const { t } = useTranslation(['transactions', 'common']);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [data, setData] = useState([]);
@@ -271,6 +268,40 @@ export default function Transaction() {
   const isAdmin = AuthService.isAdmin();
   const walletId = searchParams.get('walletId') || '';
   const walletNameParam = searchParams.get('walletName') || '';
+
+  const walletFallback = t('walletFallback');
+  const tableHead = useMemo(
+    () => [
+      { id: 'type', label: t('common:filters.type'), alignRight: false, firstColumn: true },
+      { id: 'fromWallet', label: t('table.from'), alignRight: false },
+      { id: 'toWallet', label: t('table.to'), alignRight: false },
+      { id: 'amount', label: t('common:fields.amount'), alignRight: true },
+      { id: 'description', label: t('common:fields.description'), alignRight: false },
+      { id: 'createdAt', label: t('table.when'), alignRight: false },
+      { id: 'status', label: t('common:filters.status'), alignRight: false },
+      { id: 'actions', label: '', alignRight: true },
+    ],
+    [t]
+  );
+  const typeOptions = useMemo(
+    () => [
+      { value: '', label: t('typeOptions.all') },
+      { value: 'Transfer', label: t('typeOptions.transfer') },
+      { value: 'Withdraw', label: t('typeOptions.withdraw') },
+      { value: 'Top-up', label: t('typeOptions.topUp') },
+      { value: 'Reverse', label: t('typeOptions.reverse') },
+    ],
+    [t]
+  );
+  const statusOptions = useMemo(
+    () => [
+      { value: '', label: t('statusOptions.all') },
+      { value: 'SUCCESS', label: t('statusOptions.success') },
+      { value: 'PENDING', label: t('statusOptions.pending') },
+      { value: 'ERROR', label: t('statusOptions.error') },
+    ],
+    [t]
+  );
 
   const filtersActive = Boolean(typeFilter || statusFilter || dateFrom || dateTo || walletId);
 
@@ -413,69 +444,72 @@ export default function Transaction() {
       .then((response) => {
         const status = response?.status || response?.data?.status;
         if (status === 'PENDING_APPROVAL') {
-          enqueueSnackbar('Reverse submitted for dual-control approval', { variant: 'info' });
+          enqueueSnackbar(t('reverse.pendingApproval'), { variant: 'info' });
           setReverseTarget(null);
           navigate('/approvals');
           return;
         }
-        enqueueSnackbar('Transaction reversed', { variant: 'success' });
+        enqueueSnackbar(t('reverse.success'), { variant: 'success' });
         setReverseTarget(null);
         fetchData();
       })
       .catch((error) => {
-        enqueueSnackbar(error.response?.data?.message || 'Reverse failed', { variant: 'error' });
+        enqueueSnackbar(error.response?.data?.message || t('reverse.failed'), { variant: 'error' });
       })
       .finally(() => setReversing(false));
   };
 
-  const listTitle = isAdmin ? 'All Transactions' : 'Transactions';
+  const listTitle = isAdmin ? t('titleAdmin') : t('title');
+  const countLabel = loading
+    ? t('common:status.loading')
+    : filteredData.length === 1
+      ? t('countOne')
+      : t('countMany', { count: filteredData.length });
+  const countSuffix =
+    filtersActive && data.length > 0 ? ` ${t('countFiltered', { total: data.length })}` : '';
 
   return (
     <>
       <Helmet>
-        <title> Transactions | Digital Purse </title>
+        <title>{t('helmet')}</title>
       </Helmet>
       <Container sx={{ minWidth: '100%' }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
           <Stack spacing={0.5}>
             <Typography variant="h4">{listTitle}</Typography>
             <Typography variant="body2" color="text.secondary">
-              {loading
-                ? 'Loading…'
-                : filteredData.length === 1
-                  ? '1 transaction'
-                  : `${filteredData.length} transactions`}
-              {filtersActive && data.length > 0 ? ` (of ${data.length})` : ''}
+              {countLabel}
+              {countSuffix}
             </Typography>
           </Stack>
         </Stack>
 
         <Box sx={{ ...FOUR_COL_GRID_SX, mb: 3 }}>
           <OpsStatCard
-            title="Transferred"
+            title={t('stats.transferred')}
             value={filterStats.transferTotal}
             icon="eva:swap-outline"
             color="info"
           />
           <OpsStatCard
-            title="Withdrawn"
+            title={t('stats.withdrawn')}
             value={filterStats.withdrawTotal}
             icon="eva:arrow-upward-fill"
             color="warning"
           />
           <OpsStatCard
-            title="Received"
+            title={t('stats.received')}
             value={filterStats.receiveTotal}
             icon="eva:arrow-downward-fill"
             color="success"
             subtitle={
               filterStats.todayReceiveTotal
-                ? `Today ${fCurrency(filterStats.todayReceiveTotal)}`
+                ? t('stats.today', { amount: fCurrency(filterStats.todayReceiveTotal) })
                 : undefined
             }
           />
           <OpsStatCard
-            title="Pending approvals"
+            title={t('stats.pendingApprovals')}
             value={filterStats.pendingApprovals}
             format="count"
             icon="eva:checkmark-circle-2-outline"
@@ -505,7 +539,7 @@ export default function Transaction() {
             <TextField
               select
               size="small"
-              label="Type"
+              label={t('common:filters.type')}
               value={typeFilter}
               onChange={(event) => {
                 setTypeFilter(event.target.value);
@@ -513,7 +547,7 @@ export default function Transaction() {
               }}
               sx={{ minWidth: 160 }}
             >
-              {TYPE_OPTIONS.map((opt) => (
+              {typeOptions.map((opt) => (
                 <MenuItem key={opt.value || 'all-types'} value={opt.value}>
                   {opt.label}
                 </MenuItem>
@@ -522,7 +556,7 @@ export default function Transaction() {
             <TextField
               select
               size="small"
-              label="Status"
+              label={t('common:filters.status')}
               value={statusFilter}
               onChange={(event) => {
                 setStatusFilter(event.target.value);
@@ -530,7 +564,7 @@ export default function Transaction() {
               }}
               sx={{ minWidth: 160 }}
             >
-              {STATUS_OPTIONS.map((opt) => (
+              {statusOptions.map((opt) => (
                 <MenuItem key={opt.value || 'all-statuses'} value={opt.value}>
                   {opt.label}
                 </MenuItem>
@@ -539,7 +573,7 @@ export default function Transaction() {
             <TextField
               size="small"
               type="date"
-              label="From"
+              label={t('common:filters.from')}
               value={dateFrom}
               onChange={(event) => {
                 setDateFrom(event.target.value);
@@ -551,7 +585,7 @@ export default function Transaction() {
             <TextField
               size="small"
               type="date"
-              label="To"
+              label={t('common:filters.to')}
               value={dateTo}
               onChange={(event) => {
                 setDateTo(event.target.value);
@@ -568,42 +602,42 @@ export default function Transaction() {
                 startIcon={<Iconify icon="eva:close-fill" />}
                 sx={{ alignSelf: { xs: 'flex-start', md: 'center' }, cursor: 'pointer' }}
               >
-                Clear
+                {t('common:actions.clear')}
               </Button>
             )}
           </Stack>
 
           {loading ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-              Loading…
+              {t('common:status.loading')}
             </Typography>
           ) : data.length === 0 ? (
             <EmptyState
               icon="eva:list-outline"
-              title="No activity yet"
-              description="Transfers, deposits, and withdrawals will show up here."
-              actionLabel="Go to transfers"
+              title={t('empty.none')}
+              description={t('empty.noneDescription')}
+              actionLabel={t('empty.goToTransfers')}
               onAction={() => navigate('/transfers')}
             />
           ) : filteredData.length === 0 ? (
             <EmptyState
               icon="eva:search-outline"
-              title="No transactions match your filters"
-              description="Try a different wallet, type, status, or date range, or clear the filters above."
+              title={t('empty.noMatch')}
+              description={t('empty.noMatchDescription')}
             />
           ) : (
             <>
               <Scrollbar>
                 <TableContainer sx={{ minWidth: 800 }}>
                   <Table>
-                    <TransactionListHead headLabel={TABLE_HEAD} />
+                    <TransactionListHead headLabel={tableHead} />
                     <TableBody>
                       {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
                         const { id, amount, description, createdAt, fromWallet, toWallet, type, status } = row;
                         const typeName = type?.name || 'Transfer';
                         const color = activityColor(row);
-                        const from = walletCell(fromWallet);
-                        const to = walletCell(toWallet);
+                        const from = walletCell(fromWallet, walletFallback);
+                        const to = walletCell(toWallet, walletFallback);
                         const showReverse =
                           canReverse &&
                           row.reversible === true &&
@@ -629,16 +663,16 @@ export default function Transaction() {
                                 </Box>
                                 <Stack spacing={0.25}>
                                   <Label color={color} variant="soft">
-                                    {typeName}
+                                    {translateTransactionType(typeName, t)}
                                   </Label>
                                   {row.reversesTransactionId && (
                                     <Typography variant="caption" color="text.secondary">
-                                      of #{row.reversesTransactionId}
+                                      {t('reverse.reversesOf', { id: row.reversesTransactionId })}
                                     </Typography>
                                   )}
                                   {row.reversedByTransactionId && (
                                     <Typography variant="caption" color="text.secondary">
-                                      reversed by #{row.reversedByTransactionId}
+                                      {t('reverse.reversedBy', { id: row.reversedByTransactionId })}
                                     </Typography>
                                   )}
                                 </Stack>
@@ -673,7 +707,7 @@ export default function Transaction() {
                             </TableCell>
                             <TableCell align="left">
                               <Label color={statusColor(status)}>
-                                {sentenceCase(status || 'unknown')}
+                                {translateTransactionStatus(status, t)}
                               </Label>
                             </TableCell>
                             <TableCell align="right">
@@ -686,7 +720,7 @@ export default function Transaction() {
                                   onClick={() => setReverseTarget(row)}
                                   sx={{ cursor: 'pointer' }}
                                 >
-                                  Reverse
+                                  {t('common:actions.reverse')}
                                 </Button>
                               )}
                             </TableCell>
@@ -705,7 +739,7 @@ export default function Transaction() {
                 page={page}
                 onPageChange={handleChangePage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
-                labelRowsPerPage="Transactions per page"
+                labelRowsPerPage={t('pagination.rowsPerPage')}
                 sx={{
                   borderTop: (theme) => `1px solid ${theme.palette.divider}`,
                   cursor: 'pointer',
@@ -718,20 +752,22 @@ export default function Transaction() {
         </Card>
 
         <Dialog open={Boolean(reverseTarget)} onClose={() => !reversing && setReverseTarget(null)}>
-          <DialogTitle>Reverse transaction?</DialogTitle>
+          <DialogTitle>{t('reverse.dialogTitle')}</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              This creates a compensating reverse for #{reverseTarget?.id}
-              {reverseTarget?.amount != null ? ` (${fCurrency(reverseTarget.amount)})` : ''}. The original
-              record stays in history. Large amounts may need dual-control approval.
+              {t('reverse.dialogBody', {
+                id: reverseTarget?.id,
+                amountPart:
+                  reverseTarget?.amount != null ? ` (${fCurrency(reverseTarget.amount)})` : '',
+              })}
             </DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setReverseTarget(null)} disabled={reversing} color="inherit">
-              Cancel
+              {t('common:actions.cancel')}
             </Button>
             <Button onClick={confirmReverse} disabled={reversing} variant="contained" color="warning">
-              {reversing ? 'Reversing…' : 'Reverse'}
+              {reversing ? t('reverse.reversing') : t('common:actions.reverse')}
             </Button>
           </DialogActions>
         </Dialog>

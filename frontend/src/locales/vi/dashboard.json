@@ -1,0 +1,34 @@
+{
+  "helmet": "Trang chủ | Digital Purse",
+  "greeting": "Xin chào {{name}}",
+  "greetingFallback": "bạn",
+  "subtitleAdmin": "Tổng quan quản trị ví và hoạt động.",
+  "subtitleOrg": "Số dư tổ chức và thao tác nhanh cho doanh nghiệp đang chọn.",
+  "stats": {
+    "transferred": "Đã chuyển",
+    "withdrawn": "Đã rút",
+    "received": "Đã nhận",
+    "pendingApprovals": "Chờ phê duyệt",
+    "todayOutbound": "Chi hôm nay {{amount}}",
+    "today": "Hôm nay {{amount}}",
+    "wallets": "Ví",
+    "usersWithWallets": "Người dùng có ví",
+    "totalBalance": "Tổng số dư",
+    "exact": "Chính xác: {{amount}}",
+    "transactions": "Giao dịch"
+  },
+  "quickActions": {
+    "addFunds": "Nạp tiền",
+    "transfer": "Chuyển tiền",
+    "withdraw": "Rút tiền"
+  },
+  "wallets": {
+    "organizationSection": "Ví tổ chức",
+    "customerSection": "Ví khách hàng",
+    "noOrgWallets": "Chưa có ví tổ chức.",
+    "noCustomerWallets": "Chưa có ví khách hàng.",
+    "emptyTitle": "Chưa có ví",
+    "emptyDescription": "Tạo ví để bắt đầu nạp tiền và chuyển khoản.",
+    "newWallet": "Tạo ví mới"
+  }
+}

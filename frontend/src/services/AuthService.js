@@ -56,6 +56,12 @@ const getAccessToken = () => accessToken;
 
 const isAdmin = () => (currentUser?.roles || []).includes('ROLE_ADMIN');
 
+/** Merge profile fields into the in-memory session (no token change). */
+const updateCurrentUser = (partial) => {
+  if (!partial) return;
+  currentUser = { ...(currentUser || {}), ...partial };
+};
+
 const AuthService = {
   login,
   signup,
@@ -64,6 +70,7 @@ const AuthService = {
   getCurrentUser,
   getAccessToken,
   isAdmin,
+  updateCurrentUser,
 };
 
 export default AuthService;

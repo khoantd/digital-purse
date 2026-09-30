@@ -1,0 +1,57 @@
+{
+  "helmet": "Transfers | Digital Purse",
+  "title": "Transfers",
+  "subtitle": "Send, top up, or withdraw for the active organization. Large outbound amounts may require dual-control approval.",
+  "tabsAria": "Transfer actions",
+  "tabs": {
+    "send": "Send",
+    "addFunds": "Add funds",
+    "withdraw": "Withdraw"
+  },
+  "fields": {
+    "fromWallet": "From wallet",
+    "recipientAccount": "Recipient account number",
+    "customerOptional": "Customer (optional)",
+    "wallet": "Wallet",
+    "note": "Note"
+  },
+  "helpers": {
+    "vnd": "Vietnamese đồng (VND)",
+    "noteMax": "Max 50 characters",
+    "customerPrefill": "Prefills recipient from linked payee",
+    "recipientPlaceholder": "VN…",
+    "recipientHint": "Vietnam account number (starts with VN)",
+    "noWallets": "No wallets"
+  },
+  "send": {
+    "title": "Send money",
+    "subtitleAdmin": "Transfer from any wallet to another account number. Large spends may need dual-control approval.",
+    "subtitleOrg": "Transfer from an organization wallet. Amounts at or above the dual-control threshold need another member to approve.",
+    "submit": "Send",
+    "selectSender": "Select a sender wallet",
+    "enterRecipient": "Enter the recipient account number",
+    "success": "Transfer completed successfully",
+    "pending": "Transfer submitted for approval"
+  },
+  "addFunds": {
+    "title": "Add funds",
+    "subtitleAdmin": "Deposit into any wallet in the system.",
+    "subtitleOrg": "Deposit into a wallet in the active organization.",
+    "submit": "Add funds",
+    "selectWallet": "Select a wallet",
+    "success": "Funds added successfully"
+  },
+  "withdraw": {
+    "title": "Withdraw funds",
+    "subtitleAdmin": "Move money out of any wallet. Large withdrawals may need dual-control approval.",
+    "subtitleOrg": "Move money out of an organization wallet. Large amounts need another member to approve.",
+    "submit": "Withdraw",
+    "selectWallet": "Select a wallet",
+    "success": "Withdrawal completed successfully",
+    "pending": "Withdrawal submitted for approval"
+  },
+  "validation": {
+    "validAmount": "Enter a valid amount",
+    "noteRequired": "Note is required (max 50 characters)"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "helmet": "Chuyển tiền | Digital Purse",
+  "title": "Chuyển tiền",
+  "subtitle": "Gửi, nạp hoặc rút cho tổ chức đang chọn. Số tiền chi lớn có thể cần phê duyệt kiểm soát kép.",
+  "tabsAria": "Thao tác chuyển tiền",
+  "tabs": {
+    "send": "Gửi tiền",
+    "addFunds": "Nạp tiền",
+    "withdraw": "Rút tiền"
+  },
+  "fields": {
+    "fromWallet": "Ví gửi",
+    "recipientAccount": "Số tài khoản người nhận",
+    "customerOptional": "Khách hàng (tùy chọn)",
+    "wallet": "Ví",
+    "note": "Ghi chú"
+  },
+  "helpers": {
+    "vnd": "Đồng Việt Nam (VND)",
+    "noteMax": "Tối đa 50 ký tự",
+    "customerPrefill": "Tự điền người nhận từ khách hàng đã liên kết",
+    "recipientPlaceholder": "VN…",
+    "recipientHint": "Số tài khoản Việt Nam (bắt đầu bằng VN)",
+    "noWallets": "Không có ví"
+  },
+  "send": {
+    "title": "Gửi tiền",
+    "subtitleAdmin": "Chuyển từ bất kỳ ví sang số tài khoản khác. Giao dịch lớn có thể cần phê duyệt kiểm soát kép.",
+    "subtitleOrg": "Chuyển từ ví tổ chức. Số tiền từ ngưỡng kiểm soát kép trở lên cần thành viên khác phê duyệt.",
+    "submit": "Gửi tiền",
+    "selectSender": "Chọn ví gửi",
+    "enterRecipient": "Nhập số tài khoản người nhận",
+    "success": "Chuyển tiền thành công",
+    "pending": "Đã gửi yêu cầu chuyển tiền chờ phê duyệt"
+  },
+  "addFunds": {
+    "title": "Nạp tiền",
+    "subtitleAdmin": "Nạp vào bất kỳ ví trên hệ thống.",
+    "subtitleOrg": "Nạp vào ví trong tổ chức đang chọn.",
+    "submit": "Nạp tiền",
+    "selectWallet": "Chọn ví",
+    "success": "Nạp tiền thành công"
+  },
+  "withdraw": {
+    "title": "Rút tiền",
+    "subtitleAdmin": "Rút tiền từ bất kỳ ví. Số rút lớn có thể cần phê duyệt kiểm soát kép.",
+    "subtitleOrg": "Rút từ ví tổ chức. Số tiền lớn cần thành viên khác phê duyệt.",
+    "submit": "Rút tiền",
+    "selectWallet": "Chọn ví",
+    "success": "Rút tiền thành công",
+    "pending": "Đã gửi yêu cầu rút tiền chờ phê duyệt"
+  },
+  "validation": {
+    "validAmount": "Nhập số tiền hợp lệ",
+    "noteRequired": "Ghi chú bắt buộc (tối đa 50 ký tự)"
+  }
+}

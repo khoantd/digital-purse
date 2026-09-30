@@ -2,6 +2,7 @@ import { LoadingButton } from '@mui/lab';
 import { Autocomplete, Button, InputAdornment, Stack, TextField, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import AuthService from '../../services/AuthService';
 import HttpService from '../../services/HttpService';
@@ -15,6 +16,7 @@ const emptyForm = {
 };
 
 export default function WalletToWallet() {
+  const { t } = useTranslation(['transfers', 'common', 'wallets']);
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const [formValues, setFormValues] = useState(emptyForm);
@@ -33,7 +35,9 @@ export default function WalletToWallet() {
       HttpService.getListWithAuth('/wallets?page=0&size=1000')
         .then((list) => setWallets(list))
         .catch((error) => {
-          enqueueSnackbar(error.response?.data?.message || 'Could not load wallets', { variant: 'error' });
+          enqueueSnackbar(error.response?.data?.message || t('wallets:messages.loadFailed'), {
+            variant: 'error',
+          });
         })
         .finally(() => setLoadingWallets(false));
       HttpService.getListWithAuth('/customers')
@@ -48,7 +52,7 @@ export default function WalletToWallet() {
     };
     window.addEventListener('organization-changed', onOrg);
     return () => window.removeEventListener('organization-changed', onOrg);
-  }, [enqueueSnackbar]);
+  }, [enqueueSnackbar, t]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -74,22 +78,22 @@ export default function WalletToWallet() {
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!formValues.fromWalletIban) {
-      enqueueSnackbar('Select a sender wallet', { variant: 'warning' });
+      enqueueSnackbar(t('transfers:send.selectSender'), { variant: 'warning' });
       return;
     }
     const toWalletIban = formValues.toWalletIban.trim();
     if (!toWalletIban) {
-      enqueueSnackbar('Enter the recipient account number', { variant: 'warning' });
+      enqueueSnackbar(t('transfers:send.enterRecipient'), { variant: 'warning' });
       return;
     }
     const amount = Number(formValues.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      enqueueSnackbar('Enter a valid amount', { variant: 'warning' });
+      enqueueSnackbar(t('transfers:validation.validAmount'), { variant: 'warning' });
       return;
     }
     const description = formValues.description.trim();
     if (!description || description.length > 50) {
-      enqueueSnackbar('Note is required (max 50 characters)', { variant: 'warning' });
+      enqueueSnackbar(t('transfers:validation.noteRequired'), { variant: 'warning' });
       return;
     }
 
@@ -107,10 +111,9 @@ export default function WalletToWallet() {
     )
       .then((response) => {
         const pending = response?.status === 'PENDING_APPROVAL';
-        enqueueSnackbar(
-          pending ? 'Transfer submitted for approval' : 'Transfer completed successfully',
-          { variant: 'success' }
-        );
+        enqueueSnackbar(pending ? t('transfers:send.pending') : t('transfers:send.success'), {
+          variant: 'success',
+        });
         navigate(pending ? '/approvals' : '/transactions');
       })
       .catch((error) => {
@@ -128,17 +131,15 @@ export default function WalletToWallet() {
   return (
     <Stack component="form" onSubmit={handleSubmit} spacing={3} sx={{ maxWidth: 440 }} noValidate>
       <Stack spacing={0.5}>
-        <Typography variant="h6">Send money</Typography>
+        <Typography variant="h6">{t('transfers:send.title')}</Typography>
         <Typography variant="body2" color="text.secondary">
-          {isAdmin
-            ? 'Transfer from any wallet to another account number. Large spends may need dual-control approval.'
-            : 'Transfer from an organization wallet. Amounts at or above the dual-control threshold need another member to approve.'}
+          {isAdmin ? t('transfers:send.subtitleAdmin') : t('transfers:send.subtitleOrg')}
         </Typography>
       </Stack>
       <TextField
         id="amount"
         name="amount"
-        label="Amount"
+        label={t('common:fields.amount')}
         autoFocus
         required
         value={formValues.amount}
@@ -147,14 +148,16 @@ export default function WalletToWallet() {
         InputProps={{
           endAdornment: <InputAdornment position="end">₫</InputAdornment>,
         }}
-        helperText="Vietnamese đồng (VND)"
+        helperText={t('transfers:helpers.vnd')}
       />
       <Autocomplete
         ListboxProps={{ style: { maxHeight: 200, overflow: 'auto' } }}
         disablePortal
         id="fromWalletIban"
         loading={loadingWallets}
-        noOptionsText={loadingWallets ? 'Loading…' : 'No wallets'}
+        noOptionsText={
+          loadingWallets ? t('common:status.loading') : t('transfers:helpers.noWallets')
+        }
         options={wallets}
         value={selectedFromWallet}
         getOptionLabel={(wallet) => {
@@ -164,7 +167,9 @@ export default function WalletToWallet() {
         }}
         isOptionEqualToValue={(option, value) => option?.iban === value?.iban}
         onChange={handleFromWalletChange}
-        renderInput={(params) => <TextField {...params} label="From wallet" required />}
+        renderInput={(params) => (
+          <TextField {...params} label={t('transfers:fields.fromWallet')} required />
+        )}
       />
       {linkedCustomers.length > 0 && (
         <Autocomplete
@@ -179,14 +184,18 @@ export default function WalletToWallet() {
           isOptionEqualToValue={(option, value) => option?.id === value?.id}
           onChange={handleCustomerChange}
           renderInput={(params) => (
-            <TextField {...params} label="Customer (optional)" helperText="Prefills recipient from linked payee" />
+            <TextField
+              {...params}
+              label={t('transfers:fields.customerOptional')}
+              helperText={t('transfers:helpers.customerPrefill')}
+            />
           )}
         />
       )}
       <TextField
         id="toWalletIban"
         name="toWalletIban"
-        label="Recipient account number"
+        label={t('transfers:fields.recipientAccount')}
         autoComplete="off"
         required
         value={formValues.toWalletIban}
@@ -194,23 +203,23 @@ export default function WalletToWallet() {
           setSelectedCustomer(null);
           handleInputChange(e);
         }}
-        placeholder="VN…"
-        helperText="Vietnam account number (starts with VN)"
+        placeholder={t('transfers:helpers.recipientPlaceholder')}
+        helperText={t('transfers:helpers.recipientHint')}
       />
       <TextField
         id="description"
         name="description"
-        label="Note"
+        label={t('transfers:fields.note')}
         autoComplete="off"
         required
         value={formValues.description}
         onChange={handleInputChange}
         inputProps={{ maxLength: 50 }}
-        helperText="Max 50 characters"
+        helperText={t('transfers:helpers.noteMax')}
       />
       <Stack spacing={2} direction="row" justifyContent="flex-end" sx={{ pt: 1 }}>
         <Button variant="outlined" onClick={() => navigate('/wallets')} sx={{ cursor: 'pointer' }}>
-          Cancel
+          {t('common:actions.cancel')}
         </Button>
         <LoadingButton
           size="large"
@@ -219,7 +228,7 @@ export default function WalletToWallet() {
           loading={submitting}
           sx={{ minWidth: 140, cursor: 'pointer' }}
         >
-          Send
+          {t('transfers:send.submit')}
         </LoadingButton>
       </Stack>
     </Stack>

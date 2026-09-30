@@ -3,6 +3,7 @@ import { IconButton, InputAdornment, Stack, TextField } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Iconify from '../../components/iconify';
 import AuthService from '../../services/AuthService';
 import { ensureActiveOrganization } from '../../services/ensureOrganization';
@@ -17,6 +18,7 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const [formValues, setFormValues] = useState(defaultValues);
+  const { t } = useTranslation('auth');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -49,7 +51,7 @@ export default function LoginForm() {
       <TextField
         id="username"
         name="username"
-        label="Username"
+        label={t('login.username')}
         autoComplete="username"
         required
         autoFocus
@@ -59,7 +61,7 @@ export default function LoginForm() {
       <TextField
         id="password"
         name="password"
-        label="Password"
+        label={t('login.password')}
         autoComplete="current-password"
         type={showPassword ? 'text' : 'password'}
         required
@@ -71,7 +73,7 @@ export default function LoginForm() {
               <IconButton
                 onClick={() => setShowPassword(!showPassword)}
                 edge="end"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                 sx={{ cursor: 'pointer' }}
               >
                 <Iconify icon={showPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
@@ -81,7 +83,7 @@ export default function LoginForm() {
         }}
       />
       <LoadingButton fullWidth size="large" type="submit" variant="contained" sx={{ cursor: 'pointer' }}>
-        Log in
+        {t('login.submit')}
       </LoadingButton>
     </Stack>
   );

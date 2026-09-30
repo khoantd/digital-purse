@@ -1,0 +1,10 @@
+{
+  "dashboard": "Dashboard",
+  "wallets": "Wallets",
+  "customers": "Customers",
+  "transfers": "Transfers",
+  "transactions": "Transactions",
+  "approvals": "Approvals",
+  "activity": "Activity",
+  "settings": "Settings"
+}

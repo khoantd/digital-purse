@@ -1,18 +1,12 @@
 import PropTypes from 'prop-types';
 import { Box, Button, Card, Chip, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import Iconify from '../iconify';
 import { fCurrency } from '../../utils/formatNumber';
 
 function maskIban(iban) {
   if (!iban || iban.length < 8) return iban || '—';
   return `${iban.slice(0, 4)} ··· ${iban.slice(-4)}`;
-}
-
-function ownerLabel(ownerType, customerName) {
-  if (ownerType === 'CUSTOMER') {
-    return customerName ? `Customer · ${customerName}` : 'Customer';
-  }
-  return 'Organization';
 }
 
 export default function WalletCard({
@@ -27,7 +21,14 @@ export default function WalletCard({
   onDetails,
   onEdit,
 }) {
+  const { t } = useTranslation('common');
   const hasActions = Boolean(onDetails || onEdit);
+  const typeLabel =
+    ownerType === 'CUSTOMER'
+      ? customerName
+        ? t('ownerType.customerNamed', { name: customerName })
+        : t('ownerType.customer')
+      : t('ownerType.organization');
 
   return (
     <Card
@@ -95,7 +96,7 @@ export default function WalletCard({
           </Stack>
           <Chip
             size="small"
-            label={ownerLabel(ownerType, customerName)}
+            label={typeLabel}
             sx={{ alignSelf: 'flex-start', maxWidth: '100%', height: 22, '& .MuiChip-label': { px: 1 } }}
             variant="outlined"
           />
@@ -126,14 +127,14 @@ export default function WalletCard({
               variant="outlined"
               color="inherit"
               startIcon={<Iconify icon="eva:eye-outline" width={16} height={16} />}
-              aria-label={`View details for ${name}`}
+              aria-label={t('actions.detailsFor', { name })}
               onClick={(e) => {
                 e.stopPropagation();
                 onDetails();
               }}
               sx={{ cursor: 'pointer', flex: 1 }}
             >
-              Details
+              {t('actions.details')}
             </Button>
           )}
           {onEdit && (
@@ -142,14 +143,14 @@ export default function WalletCard({
               variant="outlined"
               color="inherit"
               startIcon={<Iconify icon="eva:edit-outline" width={16} height={16} />}
-              aria-label={`Edit ${name}`}
+              aria-label={t('actions.editFor', { name })}
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
               }}
               sx={{ cursor: 'pointer', flex: 1 }}
             >
-              Edit
+              {t('actions.edit')}
             </Button>
           )}
         </Stack>

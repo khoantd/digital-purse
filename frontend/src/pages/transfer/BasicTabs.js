@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography';
 import PropTypes from 'prop-types';
 import * as React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import Iconify from '../../components/iconify';
 import AddFunds from './AddFunds';
@@ -50,6 +51,7 @@ function a11yProps(index) {
 }
 
 export default function BasicTabs() {
+  const { t } = useTranslation('transfers');
   const [searchParams, setSearchParams] = useSearchParams();
   const value = tabIndexFromParam(searchParams.get('tab'));
 
@@ -60,14 +62,13 @@ export default function BasicTabs() {
   return (
     <>
       <Helmet>
-        <title> Transfers | Digital Purse </title>
+        <title>{t('helmet')}</title>
       </Helmet>
       <Container sx={{ minWidth: '100%' }}>
         <Stack spacing={0.5} sx={{ mb: 3 }}>
-          <Typography variant="h4">Transfers</Typography>
+          <Typography variant="h4">{t('title')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Send, top up, or withdraw for the active organization. Large outbound amounts may require dual-control
-            approval.
+            {t('subtitle')}
           </Typography>
         </Stack>
         <Card sx={{ borderRadius: 2, maxWidth: 720 }}>
@@ -75,26 +76,26 @@ export default function BasicTabs() {
             <Tabs
               value={value}
               onChange={handleChange}
-              aria-label="Transfer actions"
+              aria-label={t('tabsAria')}
               variant="scrollable"
               allowScrollButtonsMobile
             >
               <Tab
                 icon={<Iconify icon="eva:swap-outline" width={18} height={18} />}
                 iconPosition="start"
-                label="Send"
+                label={t('tabs.send')}
                 {...a11yProps(0)}
               />
               <Tab
                 icon={<Iconify icon="eva:plus-fill" width={18} height={18} />}
                 iconPosition="start"
-                label="Add funds"
+                label={t('tabs.addFunds')}
                 {...a11yProps(1)}
               />
               <Tab
                 icon={<Iconify icon="eva:arrow-downward-fill" width={18} height={18} />}
                 iconPosition="start"
-                label="Withdraw"
+                label={t('tabs.withdraw')}
                 {...a11yProps(2)}
               />
             </Tabs>

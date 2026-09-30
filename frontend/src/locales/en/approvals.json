@@ -1,0 +1,51 @@
+{
+  "helmet": "Approvals | Digital Purse",
+  "title": "Approvals",
+  "subtitle": "Dual-control spend for the active organization. Large transfers, withdrawals, and reverses wait here until another OWNER, ADMIN, or APPROVER acts.",
+  "stats": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "awaiting": "Awaiting",
+    "needsDualControl": "Needs dual-control",
+    "pendingCountOne": "1 pending approval",
+    "pendingCountMany": "{{count}} pending approvals"
+  },
+  "filters": {
+    "statusAll": "All statuses",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "operationAll": "All operations"
+  },
+  "operations": {
+    "transfer": "Transfer",
+    "withdraw": "Withdraw",
+    "reverse": "Reverse"
+  },
+  "table": {
+    "fromTo": "From → To",
+    "requester": "Requester",
+    "when": "When",
+    "actions": "Actions",
+    "sourceTx": "Source tx #{{id}}"
+  },
+  "empty": {
+    "none": "No spend requests",
+    "noneDescription": "When a transfer, withdrawal, or reverse needs dual-control approval, it will appear here for this organization.",
+    "noMatch": "No approvals match your filters",
+    "noMatchDescription": "Try a different status, operation, or date range, or clear the filters above."
+  },
+  "pagination": {
+    "rowsPerPage": "Approvals per page"
+  },
+  "actions": {
+    "working": "Working…"
+  },
+  "snackbar": {
+    "approved": "Spend request approved",
+    "approveFailed": "Approve failed",
+    "rejected": "Spend request rejected",
+    "rejectFailed": "Reject failed"
+  }
+}

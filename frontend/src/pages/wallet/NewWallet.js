@@ -17,6 +17,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import HttpService from '../../services/HttpService';
 
@@ -24,6 +25,7 @@ const OWNER_ORGANIZATION = 'ORGANIZATION';
 const OWNER_CUSTOMER = 'CUSTOMER';
 
 export default function NewWallet() {
+  const { t } = useTranslation(['wallets', 'common']);
   const defaultValues = {
     name: '',
     balance: '',
@@ -76,15 +78,15 @@ export default function NewWallet() {
     const name = formValues.name.trim();
     const balance = Number(formValues.balance);
     if (name.length < 3 || name.length > 50) {
-      enqueueSnackbar('Wallet name must be 3–50 characters', { variant: 'warning' });
+      enqueueSnackbar(t('wallets:messages.nameLength'), { variant: 'warning' });
       return;
     }
     if (!Number.isFinite(balance) || balance <= 0) {
-      enqueueSnackbar('Starting balance must be greater than zero', { variant: 'warning' });
+      enqueueSnackbar(t('wallets:newWalletPage.balancePositive'), { variant: 'warning' });
       return;
     }
     if (formValues.ownerType === OWNER_CUSTOMER && !selectedCustomer?.id) {
-      enqueueSnackbar('Select a customer for this wallet', { variant: 'warning' });
+      enqueueSnackbar(t('wallets:newWalletPage.selectCustomer'), { variant: 'warning' });
       return;
     }
 
@@ -100,7 +102,7 @@ export default function NewWallet() {
     setSubmitting(true);
     HttpService.postWithAuth('/wallets', payload)
       .then(() => {
-        enqueueSnackbar('Wallet created successfully', { variant: 'success' });
+        enqueueSnackbar(t('wallets:newWalletPage.created'), { variant: 'success' });
         navigate('/wallets');
       })
       .catch((error) => {
@@ -118,20 +120,19 @@ export default function NewWallet() {
   return (
     <>
       <Helmet>
-        <title> New Wallet | Digital Purse </title>
+        <title>{t('wallets:newWalletPage.helmet')}</title>
       </Helmet>
       <Container sx={{ minWidth: '100%' }}>
         <Stack spacing={0.5} sx={{ mb: 3 }}>
-          <Typography variant="h4">New wallet</Typography>
+          <Typography variant="h4">{t('wallets:newWalletPage.title')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Choose whether this wallet is for the organization or a customer contact, then set a name and starting
-            balance. A Vietnam account number (VN) is assigned automatically.
+            {t('wallets:newWalletPage.subtitle')}
           </Typography>
         </Stack>
         <Card sx={{ p: { xs: 2.5, md: 4 }, borderRadius: 2, maxWidth: 480 }}>
           <Stack component="form" onSubmit={handleSubmit} spacing={3} noValidate>
             <FormControl>
-              <FormLabel id="owner-type-label">Owner type</FormLabel>
+              <FormLabel id="owner-type-label">{t('wallets:newWalletPage.ownerType')}</FormLabel>
               <RadioGroup
                 row
                 aria-labelledby="owner-type-label"
@@ -139,8 +140,16 @@ export default function NewWallet() {
                 value={formValues.ownerType}
                 onChange={handleOwnerTypeChange}
               >
-                <FormControlLabel value={OWNER_ORGANIZATION} control={<Radio />} label="Organization" />
-                <FormControlLabel value={OWNER_CUSTOMER} control={<Radio />} label="Customer" />
+                <FormControlLabel
+                  value={OWNER_ORGANIZATION}
+                  control={<Radio />}
+                  label={t('common:ownerType.organization')}
+                />
+                <FormControlLabel
+                  value={OWNER_CUSTOMER}
+                  control={<Radio />}
+                  label={t('common:ownerType.customer')}
+                />
               </RadioGroup>
             </FormControl>
             {formValues.ownerType === OWNER_CUSTOMER && (
@@ -154,9 +163,9 @@ export default function NewWallet() {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Customer"
+                    label={t('common:ownerType.customer')}
                     required
-                    helperText="Active customers in the current organization"
+                    helperText={t('wallets:newWalletPage.customerHelper')}
                   />
                 )}
               />
@@ -164,19 +173,19 @@ export default function NewWallet() {
             <TextField
               id="name"
               name="name"
-              label="Wallet name"
+              label={t('wallets:edit.walletName')}
               autoComplete="given-name"
               autoFocus
               required
               value={formValues.name}
               onChange={handleInputChange}
               inputProps={{ minLength: 3, maxLength: 50 }}
-              helperText="3–50 characters"
+              helperText={t('wallets:edit.nameHelper')}
             />
             <TextField
               id="balance"
               name="balance"
-              label="Starting balance"
+              label={t('wallets:newWalletPage.startingBalance')}
               autoComplete="off"
               required
               value={formValues.balance}
@@ -185,15 +194,14 @@ export default function NewWallet() {
               InputProps={{
                 endAdornment: <InputAdornment position="end">₫</InputAdornment>,
               }}
-              helperText="Vietnamese đồng (VND), whole amounts"
+              helperText={t('wallets:newWalletPage.balanceHelper')}
             />
             <Typography variant="caption" color="text.secondary">
-              Account number is generated on the server (VND · VietQR-ready). Owner type is a label only; access stays
-              org-scoped.
+              {t('wallets:newWalletPage.footnote')}
             </Typography>
             <Stack spacing={2} direction="row" justifyContent="flex-end">
               <Button variant="outlined" onClick={() => navigate('/wallets')} sx={{ cursor: 'pointer' }}>
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <LoadingButton
                 size="large"
@@ -202,7 +210,7 @@ export default function NewWallet() {
                 loading={submitting}
                 sx={{ minWidth: 140, cursor: 'pointer' }}
               >
-                Create wallet
+                {t('wallets:newWalletPage.create')}
               </LoadingButton>
             </Stack>
           </Stack>

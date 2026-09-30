@@ -1,0 +1,58 @@
+{
+  "helmet": "Transactions | Digital Purse",
+  "title": "Transactions",
+  "titleAdmin": "All Transactions",
+  "countOne": "1 transaction",
+  "countMany": "{{count}} transactions",
+  "countFiltered": "(of {{total}})",
+  "stats": {
+    "transferred": "Transferred",
+    "withdrawn": "Withdrawn",
+    "received": "Received",
+    "pendingApprovals": "Pending approvals",
+    "today": "Today {{amount}}"
+  },
+  "filters": {
+    "walletChip": "Wallet: {{name}}"
+  },
+  "table": {
+    "from": "From",
+    "to": "To",
+    "when": "When"
+  },
+  "typeOptions": {
+    "all": "All types",
+    "transfer": "Transfer",
+    "withdraw": "Withdraw",
+    "topUp": "Top-up",
+    "reverse": "Reverse"
+  },
+  "statusOptions": {
+    "all": "All statuses",
+    "success": "Success",
+    "pending": "Pending",
+    "failed": "Failed",
+    "error": "Error"
+  },
+  "empty": {
+    "none": "No activity yet",
+    "noneDescription": "Transfers, deposits, and withdrawals will show up here.",
+    "noMatch": "No transactions match your filters",
+    "noMatchDescription": "Try a different wallet, type, status, or date range, or clear the filters above.",
+    "goToTransfers": "Go to transfers"
+  },
+  "pagination": {
+    "rowsPerPage": "Transactions per page"
+  },
+  "walletFallback": "Wallet",
+  "reverse": {
+    "success": "Transaction reversed",
+    "failed": "Reverse failed",
+    "pendingApproval": "Reverse submitted for dual-control approval",
+    "dialogTitle": "Reverse transaction?",
+    "dialogBody": "This creates a compensating reverse for #{{id}}{{amountPart}}. The original record stays in history. Large amounts may need dual-control approval.",
+    "reversing": "Reversing…",
+    "reversesOf": "of #{{id}}",
+    "reversedBy": "reversed by #{{id}}"
+  }
+}

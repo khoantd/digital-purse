@@ -11,6 +11,7 @@ import {
 import { enqueueSnackbar } from 'notistack';
 import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Iconify from '../../components/iconify';
 import HttpService from '../../services/HttpService';
@@ -22,6 +23,7 @@ function qrImageUrl(payload) {
 }
 
 export default function ReceiveFunds() {
+  const { t } = useTranslation(['wallets', 'transfers', 'common']);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [wallets, setWallets] = useState([]);
@@ -52,7 +54,9 @@ export default function ReceiveFunds() {
           if (error?.response?.status === 401) {
             navigate('/login');
           } else {
-            enqueueSnackbar(error.response?.data?.message || 'Could not load wallets', { variant: 'error' });
+            enqueueSnackbar(error.response?.data?.message || t('wallets:messages.loadFailed'), {
+              variant: 'error',
+            });
           }
         })
         .finally(() => setLoading(false));
@@ -61,50 +65,50 @@ export default function ReceiveFunds() {
     const onOrg = () => load();
     window.addEventListener('organization-changed', onOrg);
     return () => window.removeEventListener('organization-changed', onOrg);
-  }, [enqueueSnackbar, navigate, searchParams]);
+  }, [enqueueSnackbar, navigate, searchParams, t]);
 
   const copyPayload = async () => {
     if (!selected?.vietQrPayload) return;
     try {
       await navigator.clipboard.writeText(selected.vietQrPayload);
-      enqueueSnackbar('VietQR payload copied', { variant: 'success' });
+      enqueueSnackbar(t('wallets:receivePage.payloadCopied'), { variant: 'success' });
     } catch {
-      enqueueSnackbar('Could not copy', { variant: 'error' });
+      enqueueSnackbar(t('wallets:receivePage.copyFailed'), { variant: 'error' });
     }
   };
 
   return (
     <>
       <Helmet>
-        <title> Receive | Digital Purse </title>
+        <title>{t('wallets:receivePage.helmet')}</title>
       </Helmet>
       <Container sx={{ minWidth: '100%' }}>
         <Stack spacing={0.5} sx={{ mb: 3 }}>
-          <Typography variant="h4">Receive with VietQR</Typography>
+          <Typography variant="h4">{t('wallets:receivePage.title')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Show this QR so others can pay into an organization VND wallet (demo Mock rail — not a live bank transfer).
+            {t('wallets:receivePage.subtitle')}
           </Typography>
         </Stack>
 
         <Card sx={{ p: { xs: 2.5, md: 4 }, borderRadius: 2, maxWidth: 560 }}>
           {loading ? (
             <Typography variant="body2" color="text.secondary">
-              Loading…
+              {t('common:status.loading')}
             </Typography>
           ) : wallets.length === 0 ? (
             <Stack spacing={2} alignItems="flex-start">
               <Typography variant="body2" color="text.secondary">
-                Create a wallet first to generate a VietQR code.
+                {t('wallets:receivePage.empty')}
               </Typography>
               <Button variant="contained" onClick={() => navigate('/wallets/new')}>
-                New wallet
+                {t('wallets:actions.newWallet')}
               </Button>
             </Stack>
           ) : (
             <Stack spacing={3}>
               <TextField
                 select
-                label="Wallet"
+                label={t('transfers:fields.wallet')}
                 value={walletId}
                 onChange={(e) => setWalletId(e.target.value)}
                 fullWidth
@@ -122,7 +126,7 @@ export default function ReceiveFunds() {
                     <Box
                       component="img"
                       src={qrImageUrl(selected.vietQrPayload)}
-                      alt={`VietQR for ${selected.name}`}
+                      alt={t('wallets:receivePage.qrAlt', { name: selected.name })}
                       sx={{
                         width: 240,
                         height: 240,
@@ -136,7 +140,9 @@ export default function ReceiveFunds() {
                       {fCurrency(selected.balance)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {selected.currency || 'VND'} · Demo bank BIN 970436
+                      {t('wallets:receivePage.demoBin', {
+                        currency: selected.currency || 'VND',
+                      })}
                     </Typography>
                   </Stack>
 
@@ -160,14 +166,14 @@ export default function ReceiveFunds() {
                       onClick={copyPayload}
                       disabled={!selected.vietQrPayload}
                     >
-                      Copy VietQR payload
+                      {t('wallets:receivePage.copyPayload')}
                     </Button>
                     <Button
                       variant="contained"
                       startIcon={<Iconify icon="eva:arrow-forward-fill" />}
                       onClick={() => navigate('/transfers')}
                     >
-                      Go to transfers
+                      {t('wallets:receivePage.goToTransfers')}
                     </Button>
                   </Stack>
                 </>
