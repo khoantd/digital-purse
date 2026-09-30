@@ -9,6 +9,7 @@ import com.github.yildizmy.dto.response.CommandResponse;
 import com.github.yildizmy.dto.response.TransactionResponse;
 import com.github.yildizmy.exception.NoSuchElementFoundException;
 import com.github.yildizmy.repository.TransactionRepository;
+import com.github.yildizmy.security.SecurityAccess;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,6 +34,7 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionRequestMapper transactionRequestMapper;
     private final TransactionResponseMapper transactionResponseMapper;
+    private final SecurityAccess securityAccess;
 
     /**
      * Fetches a single transaction by the given id.
@@ -42,9 +44,10 @@ public class TransactionService {
      */
     @Transactional(readOnly = true)
     public TransactionResponse findById(long id) {
-        return transactionRepository.findById(id)
-                .map(transactionResponseMapper::toTransactionResponse)
+        final Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_TRANSACTION_NOT_FOUND)));
+        securityAccess.requireTransactionParticipantOrAdmin(transaction.getFromWallet(), transaction.getToWallet());
+        return transactionResponseMapper.toTransactionResponse(transaction);
     }
 
     /**
@@ -55,19 +58,21 @@ public class TransactionService {
      */
     @Transactional(readOnly = true)
     public TransactionResponse findByReferenceNumber(UUID referenceNumber) {
-        return transactionRepository.findByReferenceNumber(referenceNumber)
-                .map(transactionResponseMapper::toTransactionResponse)
+        final Transaction transaction = transactionRepository.findByReferenceNumber(referenceNumber)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_TRANSACTION_NOT_FOUND)));
+        securityAccess.requireTransactionParticipantOrAdmin(transaction.getFromWallet(), transaction.getToWallet());
+        return transactionResponseMapper.toTransactionResponse(transaction);
     }
 
     /**
-     * Fetches all transaction by the given userId.
+     * Fetches all transactions for the given userId (caller must be that user or admin).
      *
      * @param userId
      * @return List of TransactionResponse
      */
     @Transactional(readOnly = true)
     public List<TransactionResponse> findAllByUserId(Long userId) {
+        securityAccess.requireSelfOrAdmin(userId);
         final List<Transaction> transactions = transactionRepository.findAllByUserId(userId);
         if (transactions.isEmpty())
             throw new NoSuchElementFoundException(messageConfig.getMessage(ERROR_NO_RECORDS));
@@ -77,14 +82,16 @@ public class TransactionService {
     }
 
     /**
-     * Fetches all transactions based on the given paging and sorting parameters.
+     * Fetches transactions based on paging. Non-admins only see their own transactions.
      *
      * @param pageable
      * @return List of TransactionResponse
      */
     @Transactional(readOnly = true)
     public Page<TransactionResponse> findAll(Pageable pageable) {
-        final Page<Transaction> transactions = transactionRepository.findAll(pageable);
+        final Page<Transaction> transactions = securityAccess.isAdmin()
+                ? transactionRepository.findAll(pageable)
+                : transactionRepository.findAllByUserId(securityAccess.currentUser().getId(), pageable);
         if (transactions.isEmpty())
             throw new NoSuchElementFoundException(messageConfig.getMessage(ERROR_NO_RECORDS));
 

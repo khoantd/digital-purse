@@ -1,8 +1,10 @@
 package com.github.yildizmy.dto.request;
 
 import com.github.yildizmy.validator.ValidIban;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -29,6 +31,8 @@ public class WalletRequest {
     private String name;
 
     @NotNull(message = "{validation.field.balance.required}")
+    @Positive(message = "{validation.field.balance.positive}")
+    @Digits(integer = 12, fraction = 2, message = "{validation.field.balance.digits}")
     private BigDecimal balance;
 
     @NotNull(message = "{validation.field.user.required}")

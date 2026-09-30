@@ -81,8 +81,14 @@ frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
 
+# secrets — never commit
+.env.properties
+.env
+*.env.local
+
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 
 frontend/.eslintcache
+.codegraph/

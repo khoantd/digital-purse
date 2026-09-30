@@ -13,6 +13,7 @@ import com.github.yildizmy.exception.ElementAlreadyExistsException;
 import com.github.yildizmy.exception.InsufficientFundsException;
 import com.github.yildizmy.exception.NoSuchElementFoundException;
 import com.github.yildizmy.repository.WalletRepository;
+import com.github.yildizmy.security.SecurityAccess;
 import com.github.yildizmy.validator.IbanValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class WalletService {
     private final WalletResponseMapper walletResponseMapper;
     private final WalletTransactionRequestMapper walletTransactionRequestMapper;
     private final IbanValidator ibanValidator;
+    private final SecurityAccess securityAccess;
 
     /**
      * Fetches a single wallet by the given id.
@@ -49,9 +51,10 @@ public class WalletService {
      */
     @Transactional(readOnly = true)
     public WalletResponse findById(long id) {
-        return walletRepository.findById(id)
-                .map(walletResponseMapper::toWalletResponse)
+        final Wallet wallet = walletRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
+        securityAccess.requireWalletOwnerOrAdmin(wallet);
+        return walletResponseMapper.toWalletResponse(wallet);
     }
 
     /**
@@ -62,26 +65,28 @@ public class WalletService {
      */
     @Transactional(readOnly = true)
     public WalletResponse findByIban(String iban) {
-        return walletRepository.findByIban(iban)
-                .map(walletResponseMapper::toWalletResponse)
+        final Wallet wallet = walletRepository.findByIban(iban)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
+        securityAccess.requireWalletOwnerOrAdmin(wallet);
+        return walletResponseMapper.toWalletResponse(wallet);
     }
 
     /**
-     * Fetches a single wallet by the given userId.
+     * Fetches wallets for the given userId (caller must be that user or admin).
      *
      * @param userId
      * @return WalletResponse
      */
     @Transactional(readOnly = true)
     public List<WalletResponse> findByUserId(long userId) {
+        securityAccess.requireSelfOrAdmin(userId);
         return walletRepository.findByUserId(userId).stream()
                 .map(walletResponseMapper::toWalletResponse)
                 .toList();
     }
 
     /**
-     * Fetches a single wallet reference (entity) by the given id.
+     * Fetches a single wallet reference (entity) by the given iban.
      *
      * @param iban
      * @return Wallet
@@ -92,14 +97,16 @@ public class WalletService {
     }
 
     /**
-     * Fetches all wallets based on the given paging and sorting parameters.
+     * Fetches wallets based on paging. Non-admins only see their own wallets.
      *
      * @param pageable
      * @return List of WalletResponse
      */
     @Transactional(readOnly = true)
     public Page<WalletResponse> findAll(Pageable pageable) {
-        final Page<Wallet> wallets = walletRepository.findAll(pageable);
+        final Page<Wallet> wallets = securityAccess.isAdmin()
+                ? walletRepository.findAll(pageable)
+                : walletRepository.findByUserId(securityAccess.currentUser().getId(), pageable);
         if (wallets.isEmpty())
             throw new NoSuchElementFoundException(messageConfig.getMessage(ERROR_NO_RECORDS));
         return wallets.map(walletResponseMapper::toWalletResponse);
@@ -113,6 +120,8 @@ public class WalletService {
      */
     @Transactional
     public CommandResponse create(WalletRequest request) {
+        securityAccess.requireSelfOrAdmin(request.getUserId());
+
         if (walletRepository.existsByIbanIgnoreCase(request.getIban()))
             throw new ElementAlreadyExistsException(messageConfig.getMessage(ERROR_WALLET_IBAN_EXISTS));
         if (walletRepository.existsByUserIdAndNameIgnoreCase(request.getUserId(), request.getName()))
@@ -140,6 +149,7 @@ public class WalletService {
     public CommandResponse transferFunds(TransactionRequest request) {
         final Wallet toWallet = getByIban(request.getToWalletIban());
         final Wallet fromWallet = getByIban(request.getFromWalletIban());
+        securityAccess.requireWalletOwnerOrAdmin(fromWallet);
 
         // check if the balance of sender wallet has equal or higher to/than transfer amount
         if (fromWallet.getBalance().compareTo(request.getAmount()) < 0)
@@ -167,6 +177,7 @@ public class WalletService {
     @Transactional
     public CommandResponse addFunds(TransactionRequest request) {
         final Wallet toWallet = getByIban(request.getToWalletIban());
+        securityAccess.requireWalletOwnerOrAdmin(toWallet);
 
         // update balance of the receiver wallet
         toWallet.setBalance(toWallet.getBalance().add(request.getAmount()));
@@ -187,6 +198,7 @@ public class WalletService {
     @Transactional
     public CommandResponse withdrawFunds(TransactionRequest request) {
         final Wallet fromWallet = getByIban(request.getFromWalletIban());
+        securityAccess.requireWalletOwnerOrAdmin(fromWallet);
 
         // check if the balance of sender wallet has equal or higher to/than transfer amount
         if (fromWallet.getBalance().compareTo(request.getAmount()) < 0)
@@ -208,9 +220,11 @@ public class WalletService {
      * @param request
      * @return id of the updated wallet
      */
+    @Transactional
     public CommandResponse update(long id, WalletRequest request) {
         final Wallet foundWallet = walletRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
+        securityAccess.requireWalletOwnerOrAdmin(foundWallet);
 
         // check if the iban is changed and new iban is already exists
         if (!request.getIban().equalsIgnoreCase(foundWallet.getIban()) &&
@@ -235,9 +249,11 @@ public class WalletService {
      *
      * @param id
      */
+    @Transactional
     public void deleteById(long id) {
         final Wallet wallet = walletRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
+        securityAccess.requireWalletOwnerOrAdmin(wallet);
         walletRepository.delete(wallet);
         log.info(messageConfig.getMessage(INFO_WALLET_DELETED, wallet.getIban(), wallet.getName(), wallet.getBalance()));
     }

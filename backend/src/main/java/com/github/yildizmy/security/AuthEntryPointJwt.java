@@ -1,6 +1,5 @@
 package com.github.yildizmy.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.yildizmy.config.MessageSourceConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,6 +27,7 @@ import static com.github.yildizmy.common.MessageKeys.ERROR_UNAUTHORIZED_DETAILS;
 public class AuthEntryPointJwt implements AuthenticationEntryPoint {
 
     private final MessageSourceConfig messageConfig;
+    private final JsonMapper jsonMapper;
 
     @Override
     public void commence(HttpServletRequest request,
@@ -43,7 +44,6 @@ public class AuthEntryPointJwt implements AuthenticationEntryPoint {
         body.put("message", authException.getMessage());
         body.put("path", request.getServletPath());
 
-        final ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(response.getOutputStream(), body);
+        jsonMapper.writeValue(response.getOutputStream(), body);
     }
 }

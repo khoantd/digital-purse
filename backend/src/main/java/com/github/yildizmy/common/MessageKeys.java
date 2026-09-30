@@ -23,6 +23,7 @@ public final class MessageKeys {
     public static final String ERROR_UNKNOWN = "error.unknown";
     public static final String ERROR_UNAUTHORIZED = "error.unauthorized";
     public static final String ERROR_UNAUTHORIZED_DETAILS = "error.unauthorized.details";
+    public static final String ERROR_FORBIDDEN = "error.forbidden";
     public static final String ERROR_AUTH_SETUP = "error.auth.setup";
     public static final String ERROR_USERNAME_NOT_FOUND = "error.username.not.found";
     public static final String ERROR_JWT_INVALID_SIGNATURE = "error.jwt.invalid.signature";

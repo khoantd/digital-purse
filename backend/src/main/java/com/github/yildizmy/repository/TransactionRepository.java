@@ -1,6 +1,8 @@
 package com.github.yildizmy.repository;
 
 import com.github.yildizmy.domain.entity.Transaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +23,14 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             "WHERE w.user.id = :userId " +
             "ORDER BY t.createdAt DESC")
     List<Transaction> findAllByUserId(@Param("userId") Long userId);
+
+    @Query(value = "SELECT DISTINCT t " +
+            "FROM Transaction t " +
+            "LEFT JOIN Wallet w ON w.id IN (t.fromWallet.id, t.toWallet.id) " +
+            "WHERE w.user.id = :userId",
+            countQuery = "SELECT COUNT(DISTINCT t) " +
+                    "FROM Transaction t " +
+                    "LEFT JOIN Wallet w ON w.id IN (t.fromWallet.id, t.toWallet.id) " +
+                    "WHERE w.user.id = :userId")
+    Page<Transaction> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
 }

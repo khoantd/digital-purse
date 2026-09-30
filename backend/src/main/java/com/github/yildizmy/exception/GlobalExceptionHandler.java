@@ -107,6 +107,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
+     * Handles custom ForbiddenException (ownership / authorization failures).
+     *
+     * @param ex
+     * @param request
+     * @return ResponseEntity<Object> with detailed information related to the error
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ResponseEntity<Object> handleForbiddenException(ForbiddenException ex, WebRequest request) {
+        log.error(messageConfig.getMessage(ERROR_FORBIDDEN, ex));
+        return buildErrorResponse(ex, HttpStatus.FORBIDDEN, request);
+    }
+
+    /**
      * Handles AuthenticationException.
      *
      * @param ex

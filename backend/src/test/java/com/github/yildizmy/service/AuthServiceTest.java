@@ -21,7 +21,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Collections;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -98,8 +97,7 @@ class AuthServiceTest {
                 "User",
                 "newuser",
                 "new@example.com",
-                "password",
-                Set.of("ROLE_USER")
+                "password"
         );
         var newUser = new User();
         newUser.setId(2L);
@@ -129,8 +127,7 @@ class AuthServiceTest {
                 "User",
                 "existinguser",
                 "existing@example.com",
-                "password",
-                Set.of("ROLE_USER")
+                "password"
         );
 
         when(userRepository.existsByUsernameIgnoreCase("existinguser")).thenReturn(true);
@@ -151,8 +148,7 @@ class AuthServiceTest {
                 "User",
                 "newuser",
                 "existing@example.com",
-                "password",
-                Set.of("ROLE_USER")
+                "password"
         );
 
         when(userRepository.existsByUsernameIgnoreCase("newuser")).thenReturn(false);

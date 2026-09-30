@@ -1,5 +1,6 @@
 package com.github.yildizmy.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -7,14 +8,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
-
 /**
  * Data Transfer Object for signup request.
+ * Roles are not client-controlled (SEC-01); signup always assigns ROLE_USER server-side.
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SignupRequest {
 
     private Long id;
@@ -39,6 +40,4 @@ public class SignupRequest {
     @Size(min = 6, max = 100, message = "{validation.user.password.length}")
     @NotBlank(message = "{validation.user.password.required}")
     private String password;
-
-    private Set<String> roles;
 }

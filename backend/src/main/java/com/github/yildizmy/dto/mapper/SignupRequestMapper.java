@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Mapper used for mapping SignupRequest fields.
@@ -44,11 +45,8 @@ public abstract class SignupRequestMapper {
     @AfterMapping
     void setToEntityFields(@MappingTarget User entity, SignupRequest dto) {
         entity.setPassword(passwordEncoder.encode(dto.getPassword()));
-
-        final List<RoleType> roleTypes = dto.getRoles().stream()
-                .map(RoleType::valueOf)
-                .toList();
-        final List<Role> roles = roleService.getReferenceByTypeIsIn(new HashSet<>(roleTypes));
+        // SEC-01: never honor client-supplied roles; signup always creates ROLE_USER only
+        final List<Role> roles = roleService.getReferenceByTypeIsIn(Set.of(RoleType.ROLE_USER));
         entity.setRoles(new HashSet<>(roles));
     }
 }

@@ -1,14 +1,18 @@
 package com.github.yildizmy.service;
 
 import com.github.yildizmy.config.MessageSourceConfig;
+import com.github.yildizmy.domain.entity.Transaction;
+import com.github.yildizmy.domain.entity.User;
+import com.github.yildizmy.domain.entity.Wallet;
 import com.github.yildizmy.dto.mapper.TransactionRequestMapper;
 import com.github.yildizmy.dto.mapper.TransactionResponseMapper;
 import com.github.yildizmy.dto.request.TransactionRequest;
 import com.github.yildizmy.dto.response.TransactionResponse;
+import com.github.yildizmy.exception.ForbiddenException;
 import com.github.yildizmy.exception.NoSuchElementFoundException;
-import com.github.yildizmy.domain.entity.Transaction;
-import com.github.yildizmy.domain.entity.Wallet;
 import com.github.yildizmy.repository.TransactionRepository;
+import com.github.yildizmy.security.SecurityAccess;
+import com.github.yildizmy.security.UserDetailsImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,9 +22,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -43,6 +51,9 @@ class TransactionServiceTest {
     @Mock
     private MessageSourceConfig messageConfig;
 
+    @Mock
+    private SecurityAccess securityAccess;
+
     private Transaction testTransaction;
     private TransactionResponse testTransactionResponse;
 
@@ -52,6 +63,8 @@ class TransactionServiceTest {
         testTransaction.setId(1L);
         testTransaction.setReferenceNumber(UUID.randomUUID());
         testTransaction.setAmount(BigDecimal.valueOf(100));
+        testTransaction.setFromWallet(walletOwnedBy(1L, "FROM123"));
+        testTransaction.setToWallet(walletOwnedBy(2L, "TO123"));
 
         testTransactionResponse = new TransactionResponse();
         testTransactionResponse.setId(1L);
@@ -68,7 +81,8 @@ class TransactionServiceTest {
 
         assertNotNull(result);
         assertEquals(testTransactionResponse, result);
-
+        verify(securityAccess).requireTransactionParticipantOrAdmin(
+                testTransaction.getFromWallet(), testTransaction.getToWallet());
         verify(transactionRepository).findById(1L);
         verify(transactionResponseMapper).toTransactionResponse(testTransaction);
     }
@@ -80,6 +94,17 @@ class TransactionServiceTest {
         assertThrows(NoSuchElementFoundException.class, () -> transactionService.findById(1L));
 
         verify(transactionRepository).findById(1L);
+        verify(securityAccess, never()).requireTransactionParticipantOrAdmin(any(), any());
+    }
+
+    @Test
+    void findById_shouldPropagateForbiddenForBystander() {
+        when(transactionRepository.findById(1L)).thenReturn(Optional.of(testTransaction));
+        doThrow(new ForbiddenException("forbidden")).when(securityAccess)
+                .requireTransactionParticipantOrAdmin(testTransaction.getFromWallet(), testTransaction.getToWallet());
+
+        assertThrows(ForbiddenException.class, () -> transactionService.findById(1L));
+        verify(transactionResponseMapper, never()).toTransactionResponse(any());
     }
 
     @Test
@@ -93,7 +118,8 @@ class TransactionServiceTest {
 
         assertNotNull(result);
         assertEquals(testTransactionResponse, result);
-
+        verify(securityAccess).requireTransactionParticipantOrAdmin(
+                testTransaction.getFromWallet(), testTransaction.getToWallet());
         verify(transactionRepository).findByReferenceNumber(referenceNumber);
         verify(transactionResponseMapper).toTransactionResponse(testTransaction);
     }
@@ -123,9 +149,17 @@ class TransactionServiceTest {
         assertEquals(2, result.size());
         assertEquals(testTransactionResponse, result.get(0));
         assertEquals(testTransactionResponse, result.get(1));
-
+        verify(securityAccess).requireSelfOrAdmin(userId);
         verify(transactionRepository).findAllByUserId(userId);
         verify(transactionResponseMapper, times(2)).toTransactionResponse(any(Transaction.class));
+    }
+
+    @Test
+    void findAllByUserId_shouldPropagateForbiddenForOtherUser() {
+        doThrow(new ForbiddenException("forbidden")).when(securityAccess).requireSelfOrAdmin(2L);
+
+        assertThrows(ForbiddenException.class, () -> transactionService.findAllByUserId(2L));
+        verify(transactionRepository, never()).findAllByUserId(anyLong());
     }
 
     @Test
@@ -140,10 +174,31 @@ class TransactionServiceTest {
     }
 
     @Test
-    void findAll_shouldReturnPageOfTransactionResponses() {
+    void findAll_shouldScopeToCurrentUserWhenNotAdmin() {
+        var pageable = Pageable.unpaged();
+        var transactionPage = new PageImpl<>(List.of(testTransaction));
+        var currentUser = new UserDetailsImpl(1L, "user", "pw", "A", "B",
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+        when(securityAccess.isAdmin()).thenReturn(false);
+        when(securityAccess.currentUser()).thenReturn(currentUser);
+        when(transactionRepository.findAllByUserId(1L, pageable)).thenReturn(transactionPage);
+        when(transactionResponseMapper.toTransactionResponse(testTransaction)).thenReturn(testTransactionResponse);
+
+        var result = transactionService.findAll(pageable);
+
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        verify(transactionRepository).findAllByUserId(1L, pageable);
+        verify(transactionRepository, never()).findAll(pageable);
+    }
+
+    @Test
+    void findAll_shouldReturnPageOfTransactionResponsesForAdmin() {
         var pageable = Pageable.unpaged();
         var transactionPage = new PageImpl<>(List.of(testTransaction));
 
+        when(securityAccess.isAdmin()).thenReturn(true);
         when(transactionRepository.findAll(pageable)).thenReturn(transactionPage);
         when(transactionResponseMapper.toTransactionResponse(testTransaction)).thenReturn(testTransactionResponse);
 
@@ -152,7 +207,6 @@ class TransactionServiceTest {
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
         assertEquals(testTransactionResponse, result.getContent().get(0));
-
         verify(transactionRepository).findAll(pageable);
         verify(transactionResponseMapper).toTransactionResponse(testTransaction);
     }
@@ -161,6 +215,7 @@ class TransactionServiceTest {
     void findAll_shouldThrowExceptionWhenNoTransactionsFound() {
         var pageable = Pageable.unpaged();
 
+        when(securityAccess.isAdmin()).thenReturn(true);
         when(transactionRepository.findAll(pageable)).thenReturn(Page.empty());
 
         assertThrows(NoSuchElementFoundException.class, () -> transactionService.findAll(pageable));
@@ -173,15 +228,6 @@ class TransactionServiceTest {
         var request = new TransactionRequest();
         request.setAmount(BigDecimal.valueOf(100));
 
-        var fromWallet = new Wallet();
-        fromWallet.setIban("FROM123");
-
-        var toWallet = new Wallet();
-        toWallet.setIban("TO123");
-
-        testTransaction.setFromWallet(fromWallet);
-        testTransaction.setToWallet(toWallet);
-
         when(transactionRequestMapper.toTransaction(request)).thenReturn(testTransaction);
         when(transactionRepository.save(testTransaction)).thenReturn(testTransaction);
 
@@ -192,5 +238,14 @@ class TransactionServiceTest {
 
         verify(transactionRequestMapper).toTransaction(request);
         verify(transactionRepository).save(testTransaction);
+    }
+
+    private Wallet walletOwnedBy(Long userId, String iban) {
+        var user = new User();
+        user.setId(userId);
+        var wallet = new Wallet();
+        wallet.setIban(iban);
+        wallet.setUser(user);
+        return wallet;
     }
 }

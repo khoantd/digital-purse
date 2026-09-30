@@ -1,8 +1,10 @@
 package com.github.yildizmy.dto.request;
 
 import com.github.yildizmy.domain.enums.Status;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,6 +25,8 @@ public class TransactionRequest {
     private Long id;
 
     @NotNull(message = "{validation.field.amount.required}")
+    @Positive(message = "{validation.field.amount.positive}")
+    @Digits(integer = 12, fraction = 2, message = "{validation.field.amount.digits}")
     private BigDecimal amount;
 
     @Size(max = 50, message = "{validation.field.description.length}")
