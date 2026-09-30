@@ -92,3 +92,7 @@ frontend/yarn-error.log*
 
 frontend/.eslintcache
 .codegraph/
+
+# Python
+__pycache__/
+*.py[cod]

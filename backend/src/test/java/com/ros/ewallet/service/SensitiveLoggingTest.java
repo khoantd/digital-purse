@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.ros.ewallet.config.MessageSourceConfig;
+import com.ros.ewallet.config.TransactionLimitProperties;
 import com.ros.ewallet.domain.entity.Transaction;
 import com.ros.ewallet.domain.entity.Wallet;
 import com.ros.ewallet.dto.mapper.TransactionRequestMapper;
@@ -21,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 
 import static com.ros.ewallet.common.MessageKeys.INFO_TRANSACTION_CREATED;
 import static org.junit.jupiter.api.Assertions.*;
@@ -46,6 +48,10 @@ class SensitiveLoggingTest {
     private TransactionResponseMapper transactionResponseMapper;
     @Mock
     private SecurityAccess securityAccess;
+    @Mock
+    private TransactionLimitProperties limitProperties;
+    @Mock
+    private Clock clock;
 
     private ListAppender<ILoggingEvent> appender;
     private Logger logger;

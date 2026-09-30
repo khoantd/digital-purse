@@ -9,29 +9,64 @@ import java.time.Duration;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * SEC-08: 6th rapid auth attempt is throttled.
+ * SEC-08: credential endpoints stay strict; refresh allows higher throughput.
  */
 class AuthRateLimiterTest {
 
     @Test
-    void sixthAttempt_isThrottled() {
+    void sixthLoginAttempt_isThrottled() {
         AuthRateLimiter limiter = new AuthRateLimiter();
         String key = "login:127.0.0.1";
 
-        for (int i = 0; i < 5; i++) {
-            assertTrue(limiter.tryConsume(key), "attempt " + (i + 1) + " should be allowed");
+        for (int i = 0; i < AuthRateLimiter.LOGIN_CAPACITY; i++) {
+            assertTrue(limiter.tryConsume(key, AuthRateLimiter.LOGIN_CAPACITY),
+                    "attempt " + (i + 1) + " should be allowed");
         }
-        assertFalse(limiter.tryConsume(key), "6th attempt should be throttled");
+        assertFalse(limiter.tryConsume(key, AuthRateLimiter.LOGIN_CAPACITY),
+                "6th login attempt should be throttled");
+    }
+
+    @Test
+    void refreshAllowsSixtyPerMinute() {
+        AuthRateLimiter limiter = new AuthRateLimiter();
+        String key = "refresh:127.0.0.1";
+
+        for (int i = 0; i < AuthRateLimiter.REFRESH_CAPACITY; i++) {
+            assertTrue(limiter.tryConsume(key, AuthRateLimiter.REFRESH_CAPACITY),
+                    "refresh attempt " + (i + 1) + " should be allowed");
+        }
+        assertFalse(limiter.tryConsume(key, AuthRateLimiter.REFRESH_CAPACITY),
+                "61st refresh should be throttled");
+    }
+
+    @Test
+    void loginExhaustion_doesNotBlockRefresh() {
+        AuthRateLimiter limiter = new AuthRateLimiter();
+        for (int i = 0; i < AuthRateLimiter.LOGIN_CAPACITY; i++) {
+            assertTrue(limiter.tryConsume("login:127.0.0.1", AuthRateLimiter.LOGIN_CAPACITY));
+        }
+        assertFalse(limiter.tryConsume("login:127.0.0.1", AuthRateLimiter.LOGIN_CAPACITY));
+        assertTrue(limiter.tryConsume("refresh:127.0.0.1", AuthRateLimiter.REFRESH_CAPACITY));
     }
 
     @Test
     void differentKeys_areIndependent() {
         AuthRateLimiter limiter = new AuthRateLimiter();
-        for (int i = 0; i < 5; i++) {
-            assertTrue(limiter.tryConsume("login:a"));
+        for (int i = 0; i < AuthRateLimiter.LOGIN_CAPACITY; i++) {
+            assertTrue(limiter.tryConsume("login:a", AuthRateLimiter.LOGIN_CAPACITY));
         }
-        assertFalse(limiter.tryConsume("login:a"));
-        assertTrue(limiter.tryConsume("login:b"));
+        assertFalse(limiter.tryConsume("login:a", AuthRateLimiter.LOGIN_CAPACITY));
+        assertTrue(limiter.tryConsume("login:b", AuthRateLimiter.LOGIN_CAPACITY));
+    }
+
+    @Test
+    void defaultTryConsume_usesLoginCapacity() {
+        AuthRateLimiter limiter = new AuthRateLimiter();
+        String key = "login:legacy";
+        for (int i = 0; i < AuthRateLimiter.LOGIN_CAPACITY; i++) {
+            assertTrue(limiter.tryConsume(key));
+        }
+        assertFalse(limiter.tryConsume(key));
     }
 
     @Test

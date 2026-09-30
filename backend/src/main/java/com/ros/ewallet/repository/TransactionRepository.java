@@ -17,6 +17,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     Optional<Transaction> findByReferenceNumber(UUID referenceNumber);
 
+    Optional<Transaction> findByReversesTransaction_Id(Long originalTransactionId);
+
     @Query(value = "SELECT t " +
             "FROM Transaction t " +
             "LEFT JOIN Wallet w ON w.id IN (t.fromWallet.id, t.toWallet.id) " +
@@ -33,4 +35,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                     "LEFT JOIN Wallet w ON w.id IN (t.fromWallet.id, t.toWallet.id) " +
                     "WHERE w.user.id = :userId")
     Page<Transaction> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("""
+            SELECT COUNT(DISTINCT t.id)
+            FROM Transaction t
+            WHERE t.fromWallet.organization.id = :organizationId
+               OR t.toWallet.organization.id = :organizationId
+            """)
+    long countByOrganizationId(@Param("organizationId") Long organizationId);
 }

@@ -5,6 +5,8 @@ import { bgBlur } from '../../../utils/cssStyles';
 import Iconify from '../../../components/iconify';
 import Searchbar from './Searchbar';
 import AccountPopover from './AccountPopover';
+import OrgSwitcher from './OrgSwitcher';
+import TransactionQuotaMeter from './TransactionQuotaMeter';
 
 const NAV_WIDTH = 280;
 
@@ -60,6 +62,8 @@ export default function Header({ onOpenNav }) {
             sm: 1,
           }}
         >
+          <OrgSwitcher />
+          <TransactionQuotaMeter />
           <AccountPopover />
         </Stack>
       </StyledToolbar>

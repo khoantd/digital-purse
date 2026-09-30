@@ -3,6 +3,7 @@ package com.ros.ewallet.config;
 import com.ros.ewallet.security.AuthEntryPointJwt;
 import com.ros.ewallet.security.AuthTokenFilter;
 import com.ros.ewallet.security.JwtUtils;
+import com.ros.ewallet.security.OrganizationContextFilter;
 import com.ros.ewallet.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,12 +43,14 @@ public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final MessageSourceConfig messageConfig;
     private final JwtUtils jwtUtils;
+    private final OrganizationContextFilter organizationContextFilter;
 
     @Value("${app.security.cors.allowed-origins}")
     private String allowedOrigins;
 
     private static final String[] AUTH_WHITELIST = {
             "/api/v1/auth/**",
+            "/error",
             "/v3/api-docs/**",
             "/v3/api-docs.yaml",
             "/swagger-ui/**",
@@ -60,7 +63,9 @@ public class SecurityConfig {
             HttpHeaders.CONTENT_TYPE,
             HttpHeaders.ACCEPT,
             HttpHeaders.ORIGIN,
-            "X-Requested-With"
+            "X-Requested-With",
+            "Idempotency-Key",
+            "X-Organization-Id"
     );
 
     @Bean
@@ -108,6 +113,7 @@ public class SecurityConfig {
 
         httpSecurity.authenticationProvider(authenticationProvider());
         httpSecurity.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        httpSecurity.addFilterAfter(organizationContextFilter, AuthTokenFilter.class);
         return httpSecurity.build();
     }
 

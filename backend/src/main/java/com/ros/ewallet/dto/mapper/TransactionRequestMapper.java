@@ -37,6 +37,7 @@ public abstract class TransactionRequestMapper {
     @Mapping(target = "fromWallet", ignore = true)
     @Mapping(target = "toWallet", ignore = true)
     @Mapping(target = "type", ignore = true)
+    @Mapping(target = "reversesTransaction", ignore = true)
     public abstract Transaction toTransaction(TransactionRequest dto);
 
     @Mapping(target = "fromWalletIban", source = "fromWallet.iban")

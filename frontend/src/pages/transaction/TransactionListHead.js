@@ -11,7 +11,7 @@ export default function TransactionListHead({ headLabel }) {
       <TableRow>
         {headLabel.map((headCell) => (
           <TableCell
-            sx={{ paddingLeft: headCell.firstColumn ? 5 : 2 }}
+            sx={{ paddingLeft: headCell.firstColumn ? 3 : 2 }}
             key={headCell.id}
             align={headCell.alignRight ? 'right' : 'left'}
           >

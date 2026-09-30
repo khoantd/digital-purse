@@ -29,9 +29,15 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
 
     Page<Wallet> findByUserId(Long userId, Pageable pageable);
 
+    List<Wallet> findByOrganizationId(Long organizationId);
+
+    Page<Wallet> findByOrganizationId(Long organizationId, Pageable pageable);
+
     boolean existsByIbanIgnoreCase(String iban);
 
     boolean existsByUserIdAndNameIgnoreCase(Long userId, String name);
+
+    boolean existsByOrganizationIdAndNameIgnoreCase(Long organizationId, String name);
 
     Wallet getReferenceByIban(String iban);
 }

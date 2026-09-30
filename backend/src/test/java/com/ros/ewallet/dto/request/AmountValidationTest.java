@@ -93,6 +93,16 @@ class AmountValidationTest {
         assertFalse(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("balance")));
     }
 
+    @Test
+    void walletCreate_allowsMissingIban() {
+        var request = validWalletRequest();
+        request.setIban(null);
+
+        Set<ConstraintViolation<WalletRequest>> violations = validator.validate(request);
+
+        assertTrue(violations.isEmpty());
+    }
+
     private TransactionRequest validTransactionRequest() {
         var request = new TransactionRequest();
         request.setAmount(new BigDecimal("10.00"));
@@ -107,6 +117,7 @@ class AmountValidationTest {
         request.setIban("TR330006100519786457841326");
         request.setName("Primary");
         request.setBalance(new BigDecimal("100.00"));
+        request.setOwnerType(com.ros.ewallet.domain.enums.WalletOwnerType.ORGANIZATION);
         return request;
     }
 }

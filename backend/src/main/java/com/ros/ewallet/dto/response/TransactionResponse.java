@@ -21,4 +21,10 @@ public class TransactionResponse {
     private WalletResponse fromWallet;
     private WalletResponse toWallet;
     private TypeResponse type;
+    /** Present when this row is a reverse of another transaction. */
+    private Long reversesTransactionId;
+    /** Present when another transaction has reversed this row. */
+    private Long reversedByTransactionId;
+    /** Whether this SUCCESS money movement is eligible for reverse (server rules; role still enforced). */
+    private Boolean reversible;
 }

@@ -1,6 +1,7 @@
 spring:
   config:
-    import: optional:file:.env.properties # read environment variables from .env file
+    # Prefer repo-root env when running from backend/; also allow cwd-relative for IDE/root runs.
+    import: optional:file:../.env.properties,optional:file:.env.properties
   application:
     name: e-wallet
   main:
@@ -14,7 +15,7 @@ spring:
     date-format: 'dd.MM.yyyy'
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/${db_name}
+    url: jdbc:postgresql://localhost:5433/${db_name}
     username: ${db_username}
     password: ${db_password}
   jpa:
@@ -59,6 +60,8 @@ logging:
 
 server:
   port: 8080
+  # Default 8KB is often exceeded on localhost when many cookies share :8080
+  max-http-request-header-size: 64KB
   error:
     include-message: always
     include-binding-errors: always
@@ -75,4 +78,14 @@ app:
     jwtRefreshExpirationMs: 604800000
     cookieSecure: false
     cors:
-      allowed-origins: ${cors_allowed_origins:http://localhost:3000}
+      allowed-origins: ${cors_allowed_origins:http://localhost:3000,http://localhost:3001}
+  # Transactional limits (VND). Day boundary: Asia/Ho_Chi_Minh.
+  limits:
+    per-transaction-max: 50000000
+    daily-outbound-max: 100000000
+    daily-top-up-max: 100000000
+    dual-control-threshold: 10000000
+    reverse-window-hours: 72
+  # Lifetime transaction subscription allotment for new organizations.
+  subscription:
+    default-transaction-quota: 1000

@@ -1,8 +1,8 @@
-# E-Wallet Architecture
+# Digital Purse Architecture
 
 ## Overview
 
-The E-Wallet project is a full-stack web application designed to facilitate digital wallet transactions via a REST API. It focuses on critical functionalities such as user authentication, IBAN validation, transaction management, and leverages various services, including PostgreSQL, Spring Data JPA, and Spring Security.
+The Digital Purse project is a full-stack web application designed to facilitate digital wallet transactions via a REST API. It focuses on critical functionalities such as user authentication, IBAN validation, transaction management, and leverages various services, including PostgreSQL, Spring Data JPA, and Spring Security.
 
 ## Context
 
@@ -18,7 +18,7 @@ For detailed decision records, refer to the ADRs in the `architecture/adr/` dire
 
 The architecture consists of major components:
 
-- **Frontend**: User interface for interaction with the E-Wallet.
+- **Frontend**: User interface for interaction with the Digital Purse.
 - **Backend (Spring Boot)**: Handles business logic, user authentication, and transactions.
 - **Database (PostgreSQL)**: Stores user data and transaction records.
 - **External Services**: Integrates with services for IBAN validation and payment processing.

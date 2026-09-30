@@ -90,18 +90,17 @@ API endpoints can also be tested. For this purpose, see the details on [How to t
 
 ### User Accounts
 
+SME demo org **Sao Viet Trading** (password for all: `DemoPassword1!`):
+
 ```
-username: johndoe
-password: johnd@e
-role: admin
+username: smeowner
+org role: OWNER
 
-username: lindacalvin
-password: lindac@lvin
-role: admin
+username: smeaccountant
+org role: ACCOUNTANT
 
-username: jeffreytaylor
-password: jeffreyt@ylor
-role: user
+username: smeapprover
+org role: APPROVER
 ```
 
 <br/>
@@ -150,7 +149,7 @@ By using Postman, etc. API endpoints can also be tested. For this purpose, see t
 > For connecting to the application database, the following url and the credentials given in the `.env.properties` file can be used. 
 
 ```
-url: jdbc:postgresql://localhost:5432/<${db_name}>
+url: jdbc:postgresql://localhost:5433/<${db_name}>
 ```
 
 <br/>

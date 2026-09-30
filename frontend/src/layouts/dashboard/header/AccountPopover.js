@@ -10,14 +10,12 @@ const MENU_OPTIONS = [
   {
     label: 'Home',
     icon: 'eva:home-fill',
-  },
-  {
-    label: 'Profile',
-    icon: 'eva:person-fill',
+    path: '/',
   },
   {
     label: 'Settings',
     icon: 'eva:settings-2-fill',
+    path: '/settings',
   },
 ];
 
@@ -32,6 +30,13 @@ export default function AccountPopover() {
 
   const handleClose = () => {
     setOpen(null);
+  };
+
+  const handleNavigate = (path) => {
+    handleClose();
+    if (path) {
+      navigate(path);
+    }
   };
 
   const handleLogout = () => {
@@ -86,13 +91,17 @@ export default function AccountPopover() {
         <Divider sx={{ borderStyle: 'dashed' }} />
         <Stack sx={{ p: 1 }}>
           {MENU_OPTIONS.map((option) => (
-            <MenuItem key={option.label} onClick={handleClose} disabled>
+            <MenuItem
+              key={option.label}
+              onClick={() => handleNavigate(option.path)}
+              sx={{ cursor: 'pointer' }}
+            >
               {option.label}
             </MenuItem>
           ))}
         </Stack>
         <Divider sx={{ borderStyle: 'dashed' }} />
-        <MenuItem onClick={handleLogout} sx={{ m: 1 }}>
+        <MenuItem onClick={handleLogout} sx={{ m: 1, cursor: 'pointer' }}>
           Logout
         </MenuItem>
       </Popover>

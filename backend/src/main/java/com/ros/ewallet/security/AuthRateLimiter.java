@@ -9,25 +9,35 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * SEC-08: rate-limits auth endpoints (5 requests / minute / key).
+ * SEC-08: rate-limits auth endpoints per IP.
+ * Login/signup stay strict (brute-force); refresh allows normal session restore traffic.
  */
 @Component
 public class AuthRateLimiter {
 
-    private static final int CAPACITY = 5;
+    /** Brute-force protection for credential endpoints. */
+    public static final int LOGIN_CAPACITY = 5;
+    /** Session restore / 401 retry / multi-tab; still capped per IP. */
+    public static final int REFRESH_CAPACITY = 60;
     private static final Duration REFILL_PERIOD = Duration.ofMinutes(1);
 
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     public boolean tryConsume(String key) {
-        return resolveBucket(key).tryConsume(1);
+        return tryConsume(key, LOGIN_CAPACITY);
     }
 
-    private Bucket resolveBucket(String key) {
-        return buckets.computeIfAbsent(key, k -> Bucket.builder()
+    public boolean tryConsume(String key, int capacity) {
+        return resolveBucket(key, capacity).tryConsume(1);
+    }
+
+    private Bucket resolveBucket(String key, int capacity) {
+        // Key includes capacity so changing limits never reuses a mismatched bucket.
+        String bucketKey = key + "#" + capacity;
+        return buckets.computeIfAbsent(bucketKey, k -> Bucket.builder()
                 .addLimit(Bandwidth.builder()
-                        .capacity(CAPACITY)
-                        .refillIntervally(CAPACITY, REFILL_PERIOD)
+                        .capacity(capacity)
+                        .refillIntervally(capacity, REFILL_PERIOD)
                         .build())
                 .build());
     }

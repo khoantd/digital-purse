@@ -14,7 +14,7 @@
 - **Backend:** Java 17, Spring Boot 4.1.1, Spring Security 7 (JWT via jjwt 0.13.0), Spring Data JPA, Flyway 11, MapStruct 1.6.3, Lombok 1.18.38, springdoc-openapi 3.1.1, PostgreSQL
 - **Frontend:** React 18 (CRA / react-scripts), Material UI 5, React Router 6, Axios, React Hook Form, Notistack, ApexCharts
 - **Infra:** Docker Compose (Postgres 14.6); prod compose also runs frontend + backend containers
-- **Domain:** Digital e-wallet — register/login, wallets (IBAN), top-up/withdraw, transfers, transaction history
+- **Domain:** Digital Purse — register/login, wallets (IBAN), top-up/withdraw, transfers, transaction history
 
 ## Layout
 

@@ -1,4 +1,5 @@
 import axios from './axios';
+import OrganizationContext from './OrganizationContext';
 
 /** Access token kept in memory only (SEC-07). */
 let accessToken = null;
@@ -45,12 +46,15 @@ const logout = () => {
     .finally(() => {
       accessToken = null;
       currentUser = null;
+      OrganizationContext.clearActiveOrganizationId();
     });
 };
 
 const getCurrentUser = () => currentUser;
 
 const getAccessToken = () => accessToken;
+
+const isAdmin = () => (currentUser?.roles || []).includes('ROLE_ADMIN');
 
 const AuthService = {
   login,
@@ -59,6 +63,7 @@ const AuthService = {
   refresh,
   getCurrentUser,
   getAccessToken,
+  isAdmin,
 };
 
 export default AuthService;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import DashboardLayout from './layouts/dashboard/DashboardLayout';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
@@ -7,18 +7,23 @@ import Unauthorized from './pages/auth/Unauthorized';
 import Dashboard from './pages/dashboard/Dashboard';
 import Transaction from './pages/transaction/Transaction';
 import BasicTabs from './pages/transfer/BasicTabs';
-import AddFunds from './pages/wallet/AddFunds';
 import NewWallet from './pages/wallet/NewWallet';
+import ReceiveFunds from './pages/wallet/ReceiveFunds';
 import Wallet from './pages/wallet/Wallet';
+import Approvals from './pages/approvals/Approvals';
+import Customers from './pages/customers/Customers';
+import Settings from './pages/settings/Settings';
 import PrivateRoute from './PrivateRoute';
 import ProtectedRoute from './ProtectedRoute';
 import AuthService from './services/AuthService';
+import { ensureActiveOrganization } from './services/ensureOrganization';
 
 export default function App() {
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     AuthService.refresh()
+      .then(() => (AuthService.getAccessToken() ? ensureActiveOrganization() : undefined))
       .catch(() => undefined)
       .finally(() => setAuthReady(true));
   }, []);
@@ -52,7 +57,11 @@ export default function App() {
               <Route path="new" element={<NewWallet />} />
             </Route>
             <Route element={<ProtectedRoute roles={['ROLE_USER', 'ROLE_ADMIN']} />}>
-              <Route path="addFunds" element={<AddFunds />} />
+              <Route path="receive" element={<ReceiveFunds />} />
+            </Route>
+            {/* Legacy path: add-funds lives under /transfers (TransactionRequest API). */}
+            <Route element={<ProtectedRoute roles={['ROLE_USER', 'ROLE_ADMIN']} />}>
+              <Route path="addFunds" element={<Navigate to="/transfers" replace />} />
             </Route>
           </Route>
 
@@ -65,6 +74,24 @@ export default function App() {
           <Route path="transactions" element={<PrivateRoute />}>
             <Route element={<ProtectedRoute roles={['ROLE_USER', 'ROLE_ADMIN']} />}>
               <Route index element={<Transaction />} />
+            </Route>
+          </Route>
+
+          <Route path="approvals" element={<PrivateRoute />}>
+            <Route element={<ProtectedRoute roles={['ROLE_USER', 'ROLE_ADMIN']} />}>
+              <Route index element={<Approvals />} />
+            </Route>
+          </Route>
+
+          <Route path="customers" element={<PrivateRoute />}>
+            <Route element={<ProtectedRoute roles={['ROLE_USER', 'ROLE_ADMIN']} />}>
+              <Route index element={<Customers />} />
+            </Route>
+          </Route>
+
+          <Route path="settings" element={<PrivateRoute />}>
+            <Route element={<ProtectedRoute roles={['ROLE_USER', 'ROLE_ADMIN']} />}>
+              <Route index element={<Settings />} />
             </Route>
           </Route>
         </Route>

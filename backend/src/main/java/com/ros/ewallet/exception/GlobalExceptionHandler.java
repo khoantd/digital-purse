@@ -107,6 +107,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return buildErrorResponse(ex, HttpStatus.PRECONDITION_FAILED, request);
     }
 
+    @ExceptionHandler(TransactionLimitExceededException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ResponseEntity<Object> handleTransactionLimitExceededException(TransactionLimitExceededException ex,
+                                                                          WebRequest request) {
+        log.warn(messageConfig.getMessage(ERROR_LIMIT_EXCEEDED, ex));
+        return buildErrorResponse(ex, HttpStatus.UNPROCESSABLE_ENTITY, request);
+    }
+
+    @ExceptionHandler(SubscriptionQuotaExceededException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ResponseEntity<Object> handleSubscriptionQuotaExceededException(SubscriptionQuotaExceededException ex,
+                                                                           WebRequest request) {
+        log.warn(messageConfig.getMessage(ERROR_SUBSCRIPTION_QUOTA_EXCEEDED, ex));
+        return buildErrorResponse(ex, HttpStatus.UNPROCESSABLE_ENTITY, request);
+    }
+
     /**
      * Handles custom ForbiddenException (ownership / authorization failures).
      *
@@ -152,6 +168,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<Object> handleConstraintValidationException(ConstraintViolationException ex, WebRequest request) {
+        log.warn(messageConfig.getMessage(ERROR_FIELD_VALIDATION, ex));
+        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
         log.warn(messageConfig.getMessage(ERROR_FIELD_VALIDATION, ex));
         return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request);
     }

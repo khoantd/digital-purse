@@ -51,6 +51,9 @@ class AuthServiceTest {
     @Mock
     private UserDetailsServiceImpl userDetailsService;
 
+    @Mock
+    private OrganizationService organizationService;
+
     private LoginRequest loginRequest;
     private UserDetailsImpl userDetails;
     private Authentication authentication;
@@ -146,6 +149,7 @@ class AuthServiceTest {
         verify(userRepository).existsByEmailIgnoreCase("new@example.com");
         verify(signupRequestMapper).toUser(signupRequest);
         verify(userRepository).save(newUser);
+        verify(organizationService).createDefaultForUser(newUser);
     }
 
     @Test

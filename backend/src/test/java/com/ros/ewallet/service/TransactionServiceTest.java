@@ -1,9 +1,12 @@
 package com.ros.ewallet.service;
 
 import com.ros.ewallet.config.MessageSourceConfig;
+import com.ros.ewallet.config.TransactionLimitProperties;
 import com.ros.ewallet.domain.entity.Transaction;
+import com.ros.ewallet.domain.entity.Type;
 import com.ros.ewallet.domain.entity.User;
 import com.ros.ewallet.domain.entity.Wallet;
+import com.ros.ewallet.domain.enums.Status;
 import com.ros.ewallet.dto.mapper.TransactionRequestMapper;
 import com.ros.ewallet.dto.mapper.TransactionResponseMapper;
 import com.ros.ewallet.dto.request.TransactionRequest;
@@ -25,12 +28,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -54,15 +60,26 @@ class TransactionServiceTest {
     @Mock
     private SecurityAccess securityAccess;
 
+    @Mock
+    private TransactionLimitProperties limitProperties;
+
+    @Mock
+    private Clock clock;
+
     private Transaction testTransaction;
     private TransactionResponse testTransactionResponse;
 
     @BeforeEach
     void setUp() {
+        Type type = new Type();
+        type.setId(1L);
         testTransaction = new Transaction();
         testTransaction.setId(1L);
         testTransaction.setReferenceNumber(UUID.randomUUID());
         testTransaction.setAmount(BigDecimal.valueOf(100));
+        testTransaction.setStatus(Status.SUCCESS);
+        testTransaction.setType(type);
+        testTransaction.setCreatedAt(Instant.parse("2026-09-30T10:00:00Z"));
         testTransaction.setFromWallet(walletOwnedBy(1L, "FROM123"));
         testTransaction.setToWallet(walletOwnedBy(2L, "TO123"));
 
@@ -70,6 +87,10 @@ class TransactionServiceTest {
         testTransactionResponse.setId(1L);
         testTransactionResponse.setReferenceNumber(testTransaction.getReferenceNumber());
         testTransactionResponse.setAmount(BigDecimal.valueOf(100));
+
+        lenient().when(limitProperties.getReverseWindowHours()).thenReturn(72);
+        lenient().when(clock.instant()).thenReturn(Instant.parse("2026-09-30T12:00:00Z"));
+        lenient().when(transactionRepository.findByReversesTransaction_Id(anyLong())).thenReturn(Optional.empty());
     }
 
     @Test

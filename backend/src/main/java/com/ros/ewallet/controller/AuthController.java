@@ -47,7 +47,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> login(@Valid @RequestBody LoginRequest request,
                                              HttpServletRequest httpRequest) {
-        consumeRateLimit(httpRequest, "login");
+        consumeRateLimit(httpRequest, "login", AuthRateLimiter.LOGIN_CAPACITY);
         final AuthService.AuthTokens tokens = authService.login(request);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshCookie(tokens.refreshToken(), refreshExpirationMs / 1000).toString())
@@ -63,7 +63,7 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<CommandResponse> signup(@Valid @RequestBody SignupRequest request,
                                                   HttpServletRequest httpRequest) {
-        consumeRateLimit(httpRequest, "signup");
+        consumeRateLimit(httpRequest, "signup", AuthRateLimiter.LOGIN_CAPACITY);
         final CommandResponse response = authService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -75,7 +75,7 @@ public class AuthController {
     public ResponseEntity<JwtResponse> refresh(
             @CookieValue(value = REFRESH_COOKIE_NAME, required = false) String refreshToken,
             HttpServletRequest httpRequest) {
-        consumeRateLimit(httpRequest, "refresh");
+        consumeRateLimit(httpRequest, "refresh", AuthRateLimiter.REFRESH_CAPACITY);
         final AuthService.AuthTokens tokens = authService.refresh(refreshToken);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshCookie(tokens.refreshToken(), refreshExpirationMs / 1000).toString())
@@ -95,9 +95,9 @@ public class AuthController {
                 .build();
     }
 
-    private void consumeRateLimit(HttpServletRequest request, String action) {
+    private void consumeRateLimit(HttpServletRequest request, String action, int capacity) {
         final String key = action + ":" + clientIp(request);
-        if (!authRateLimiter.tryConsume(key)) {
+        if (!authRateLimiter.tryConsume(key, capacity)) {
             throw new TooManyRequestsException("Too many requests. Please try again later.");
         }
     }

@@ -19,9 +19,13 @@ import static com.ros.ewallet.common.Constants.DATE_TIME_FORMAT;
 @Mapper(componentModel = "spring")
 public interface TransactionResponseMapper {
 
+    @Mapping(target = "reversesTransaction", ignore = true)
     Transaction toTransaction(TransactionResponse dto);
 
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "reversesTransactionId", ignore = true)
+    @Mapping(target = "reversedByTransactionId", ignore = true)
+    @Mapping(target = "reversible", ignore = true)
     TransactionResponse toTransactionResponse(Transaction entity);
 
     @AfterMapping

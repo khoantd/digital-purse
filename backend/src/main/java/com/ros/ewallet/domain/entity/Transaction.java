@@ -55,4 +55,9 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "type_id", referencedColumnName = "id", nullable = false)
     private Type type;
+
+    /** When set, this transaction is a compensating reverse of the referenced original. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reverses_transaction_id")
+    private Transaction reversesTransaction;
 }

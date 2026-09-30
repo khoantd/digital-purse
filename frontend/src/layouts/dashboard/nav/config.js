@@ -14,6 +14,11 @@ const navConfig = [
     icon: icon('ic_wallet'),
   },
   {
+    title: 'customers',
+    path: '/customers',
+    icon: icon('ic_user'),
+  },
+  {
     title: 'transfers',
     path: '/transfers',
     icon: icon('ic_transfer'),
@@ -22,7 +27,17 @@ const navConfig = [
     title: 'transactions',
     path: '/transactions',
     icon: icon('ic_transaction'),
-  }
+  },
+  {
+    title: 'approvals',
+    path: '/approvals',
+    icon: icon('ic_lock'),
+  },
+  {
+    title: 'settings',
+    path: '/settings',
+    icon: icon('ic_settings'),
+  },
 ];
 
 export default navConfig;

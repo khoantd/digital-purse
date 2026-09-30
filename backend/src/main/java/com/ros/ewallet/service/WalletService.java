@@ -1,7 +1,14 @@
 package com.ros.ewallet.service;
 
 import com.ros.ewallet.config.MessageSourceConfig;
+import com.ros.ewallet.domain.entity.Customer;
+import com.ros.ewallet.domain.entity.Organization;
+import com.ros.ewallet.domain.entity.Transaction;
 import com.ros.ewallet.domain.entity.Wallet;
+import com.ros.ewallet.domain.enums.CustomerStatus;
+import com.ros.ewallet.domain.enums.OrganizationRole;
+import com.ros.ewallet.domain.enums.Status;
+import com.ros.ewallet.domain.enums.WalletOwnerType;
 import com.ros.ewallet.dto.mapper.WalletRequestMapper;
 import com.ros.ewallet.dto.mapper.WalletResponseMapper;
 import com.ros.ewallet.dto.mapper.WalletTransactionRequestMapper;
@@ -12,71 +19,105 @@ import com.ros.ewallet.dto.response.WalletResponse;
 import com.ros.ewallet.exception.ElementAlreadyExistsException;
 import com.ros.ewallet.exception.InsufficientFundsException;
 import com.ros.ewallet.exception.NoSuchElementFoundException;
+import com.ros.ewallet.rail.PaymentRail;
+import com.ros.ewallet.rail.RailResult;
+import com.ros.ewallet.repository.CustomerRepository;
 import com.ros.ewallet.repository.WalletRepository;
 import com.ros.ewallet.security.SecurityAccess;
-import com.ros.ewallet.validator.IbanValidator;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
+import static com.ros.ewallet.common.Constants.CURRENCY_VND;
+import static com.ros.ewallet.common.Constants.TYPE_TOP_UP;
+import static com.ros.ewallet.common.Constants.TYPE_TRANSFER;
+import static com.ros.ewallet.common.Constants.TYPE_WITHDRAW;
 import static com.ros.ewallet.common.MessageKeys.*;
+import static com.ros.ewallet.service.IdempotencyService.*;
 
 /**
- * Service used for Wallet related operations.
+ * Service used for Wallet related operations (org-scoped).
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class WalletService {
 
     private final MessageSourceConfig messageConfig;
     private final WalletRepository walletRepository;
+    private final CustomerRepository customerRepository;
     private final TransactionService transactionService;
     private final WalletRequestMapper walletRequestMapper;
     private final WalletResponseMapper walletResponseMapper;
     private final WalletTransactionRequestMapper walletTransactionRequestMapper;
-    private final IbanValidator ibanValidator;
+    private final IbanGenerator ibanGenerator;
     private final SecurityAccess securityAccess;
+    private final PaymentRail paymentRail;
+    private final LedgerService ledgerService;
+    private final IdempotencyService idempotencyService;
+    private final TransactionLimitService transactionLimitService;
+    private final TransactionQuotaService transactionQuotaService;
+    private final OrganizationService organizationService;
+    private final SpendRequestService spendRequestService;
 
-    /**
-     * Fetches a single wallet by the given id.
-     *
-     * @param id
-     * @return WalletResponse
-     */
+    private static final int IBAN_GENERATE_MAX_ATTEMPTS = 10;
+
+    public WalletService(
+            MessageSourceConfig messageConfig,
+            WalletRepository walletRepository,
+            CustomerRepository customerRepository,
+            TransactionService transactionService,
+            WalletRequestMapper walletRequestMapper,
+            WalletResponseMapper walletResponseMapper,
+            WalletTransactionRequestMapper walletTransactionRequestMapper,
+            IbanGenerator ibanGenerator,
+            SecurityAccess securityAccess,
+            PaymentRail paymentRail,
+            LedgerService ledgerService,
+            IdempotencyService idempotencyService,
+            TransactionLimitService transactionLimitService,
+            TransactionQuotaService transactionQuotaService,
+            OrganizationService organizationService,
+            @Lazy SpendRequestService spendRequestService) {
+        this.messageConfig = messageConfig;
+        this.walletRepository = walletRepository;
+        this.customerRepository = customerRepository;
+        this.transactionService = transactionService;
+        this.walletRequestMapper = walletRequestMapper;
+        this.walletResponseMapper = walletResponseMapper;
+        this.walletTransactionRequestMapper = walletTransactionRequestMapper;
+        this.ibanGenerator = ibanGenerator;
+        this.securityAccess = securityAccess;
+        this.paymentRail = paymentRail;
+        this.ledgerService = ledgerService;
+        this.idempotencyService = idempotencyService;
+        this.transactionLimitService = transactionLimitService;
+        this.transactionQuotaService = transactionQuotaService;
+        this.organizationService = organizationService;
+        this.spendRequestService = spendRequestService;
+    }
+
     @Transactional(readOnly = true)
     public WalletResponse findById(long id) {
         final Wallet wallet = walletRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
-        securityAccess.requireWalletOwnerOrAdmin(wallet);
+        securityAccess.requireWalletOrgMemberOrAdmin(wallet);
         return walletResponseMapper.toWalletResponse(wallet);
     }
 
-    /**
-     * Fetches a single wallet by the given iban.
-     *
-     * @param iban
-     * @return WalletResponse
-     */
     @Transactional(readOnly = true)
     public WalletResponse findByIban(String iban) {
         final Wallet wallet = walletRepository.findByIban(iban)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
-        securityAccess.requireWalletOwnerOrAdmin(wallet);
+        securityAccess.requireWalletOrgMemberOrAdmin(wallet);
         return walletResponseMapper.toWalletResponse(wallet);
     }
 
-    /**
-     * Fetches wallets for the given userId (caller must be that user or admin).
-     *
-     * @param userId
-     * @return WalletResponse
-     */
     @Transactional(readOnly = true)
     public List<WalletResponse> findByUserId(long userId) {
         securityAccess.requireSelfOrAdmin(userId);
@@ -85,77 +126,143 @@ public class WalletService {
                 .toList();
     }
 
-    /**
-     * Fetches a single wallet reference (entity) by the given iban.
-     *
-     * @param iban
-     * @return Wallet
-     */
     public Wallet getByIban(String iban) {
         return walletRepository.findByIban(iban)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
     }
 
-    /**
-     * Fetches wallets based on paging. Non-admins only see their own wallets.
-     *
-     * @param pageable
-     * @return List of WalletResponse
-     */
     @Transactional(readOnly = true)
     public Page<WalletResponse> findAll(Pageable pageable) {
-        final Page<Wallet> wallets = securityAccess.isAdmin()
-                ? walletRepository.findAll(pageable)
-                : walletRepository.findByUserId(securityAccess.currentUser().getId(), pageable);
-        if (wallets.isEmpty())
+        final Page<Wallet> wallets;
+        if (securityAccess.isAdmin()) {
+            wallets = walletRepository.findAll(pageable);
+        } else {
+            Long orgId = securityAccess.requireActiveOrganizationIdForMutation();
+            wallets = walletRepository.findByOrganizationId(orgId, pageable);
+        }
+        if (wallets.isEmpty()) {
             throw new NoSuchElementFoundException(messageConfig.getMessage(ERROR_NO_RECORDS));
+        }
         return wallets.map(walletResponseMapper::toWalletResponse);
     }
 
     /**
-     * Creates a new wallet using the given request parameters.
-     * Owner is always the authenticated user (client userId is ignored).
-     *
-     * @param request
-     * @return id of the created wallet
+     * Creates a new wallet in the active organization.
      */
     @Transactional
     public CommandResponse create(WalletRequest request) {
-        final Long ownerId = securityAccess.currentUser().getId();
-        request.setUserId(ownerId);
+        final Long orgId = securityAccess.requireActiveOrganizationIdForMutation();
+        securityAccess.requireOrgRole(orgId,
+                OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.ACCOUNTANT);
 
-        if (walletRepository.existsByIbanIgnoreCase(request.getIban()))
-            throw new ElementAlreadyExistsException(messageConfig.getMessage(ERROR_WALLET_IBAN_EXISTS));
-        if (walletRepository.existsByUserIdAndNameIgnoreCase(ownerId, request.getName()))
+        final Long creatorId = securityAccess.currentUser().getId();
+        request.setUserId(creatorId);
+        request.setIban(generateUniqueIban());
+
+        if (walletRepository.existsByOrganizationIdAndNameIgnoreCase(orgId, request.getName())) {
             throw new ElementAlreadyExistsException(messageConfig.getMessage(ERROR_WALLET_NAME_EXISTS));
+        }
 
-        ibanValidator.isValid(request.getIban(), null);
+        final Customer customer = resolveOwnerCustomer(orgId, request);
 
         final Wallet wallet = walletRequestMapper.toWallet(request);
+        wallet.setOrganization(organizationService.getReferenceById(orgId));
+        wallet.setOwnerType(request.getOwnerType());
+        wallet.setCustomer(customer);
         walletRepository.save(wallet);
         log.info(messageConfig.getMessage(INFO_WALLET_CREATED, wallet.getId()));
 
-        // add this initial amount to the transactions
-        transactionService.create(walletTransactionRequestMapper.toTransactionRequest(request));
+        TransactionRequest initialTx = walletTransactionRequestMapper.toTransactionRequest(request);
+        Transaction transaction = transactionService.createEntity(initialTx);
+        if (request.getBalance() != null && request.getBalance().signum() > 0) {
+            ledgerService.postTopUp(transaction, wallet, request.getBalance(),
+                    wallet.getCurrency() != null ? wallet.getCurrency() : CURRENCY_VND);
+        }
 
-        return CommandResponse.builder().id(wallet.getId()).build();
+        return CommandResponse.completed(wallet.getId());
     }
 
     /**
-     * Transfer funds between wallets.
-     * Debit wallet is locked pessimistically to prevent double-spend races.
-     *
-     * @param request
-     * @return id of the transaction
+     * Resolves optional customer for owner label. Null when ORGANIZATION.
+     */
+    private Customer resolveOwnerCustomer(Long orgId, WalletRequest request) {
+        WalletOwnerType ownerType = request.getOwnerType();
+        if (ownerType == null) {
+            throw new IllegalArgumentException(messageConfig.getMessage(ERROR_VALIDATION));
+        }
+        if (ownerType == WalletOwnerType.ORGANIZATION) {
+            if (request.getCustomerId() != null) {
+                throw new IllegalArgumentException(messageConfig.getMessage(ERROR_WALLET_OWNER_CUSTOMER_FORBIDDEN));
+            }
+            return null;
+        }
+        if (request.getCustomerId() == null) {
+            throw new IllegalArgumentException(messageConfig.getMessage(ERROR_WALLET_OWNER_CUSTOMER_REQUIRED));
+        }
+        Customer customer = customerRepository.findByIdAndOrganizationId(request.getCustomerId(), orgId)
+                .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_CUSTOMER_NOT_FOUND)));
+        if (customer.getStatus() != CustomerStatus.ACTIVE) {
+            throw new IllegalArgumentException(messageConfig.getMessage(ERROR_WALLET_OWNER_CUSTOMER_INACTIVE));
+        }
+        return customer;
+    }
+
+    private String generateUniqueIban() {
+        for (int attempt = 0; attempt < IBAN_GENERATE_MAX_ATTEMPTS; attempt++) {
+            final String iban = ibanGenerator.generate();
+            if (!walletRepository.existsByIbanIgnoreCase(iban)) {
+                return iban;
+            }
+        }
+        throw new ElementAlreadyExistsException(messageConfig.getMessage(ERROR_WALLET_IBAN_EXISTS));
+    }
+
+    @Transactional
+    public CommandResponse transferFunds(TransactionRequest request, String idempotencyKey) {
+        final Long orgId = securityAccess.requireActiveOrganizationIdForMutation();
+        securityAccess.requireOrgRole(orgId,
+                OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.ACCOUNTANT);
+
+        Optional<Long> existing = idempotencyService.findResponseId(orgId, OP_TRANSFER, idempotencyKey);
+        if (existing.isPresent()) {
+            return CommandResponse.completed(existing.get());
+        }
+
+        final Wallet fromWallet = getByIban(request.getFromWalletIban());
+        securityAccess.requireWalletInActiveOrg(fromWallet);
+
+        if (transactionLimitService.requiresDualControl(orgId, request.getAmount())) {
+            transactionQuotaService.assertWithinQuota(orgId);
+            return spendRequestService.createPending(orgId, OP_TRANSFER, request);
+        }
+
+        return executeTransfer(request, idempotencyKey, orgId);
+    }
+
+    /**
+     * Executes a transfer immediately (used by dual-control approve and below-threshold path).
      */
     @Transactional
-    public CommandResponse transferFunds(TransactionRequest request) {
+    public CommandResponse executeTransfer(TransactionRequest request, String idempotencyKey, Long orgId) {
+        final Long userId = securityAccess.currentUser().getId();
+        Optional<Long> existing = idempotencyService.findResponseId(orgId, OP_TRANSFER, idempotencyKey);
+        if (existing.isPresent()) {
+            return CommandResponse.completed(existing.get());
+        }
+
         final Wallet fromWallet = getByIbanForUpdate(request.getFromWalletIban());
         final Wallet toWallet = getByIban(request.getToWalletIban());
-        securityAccess.requireWalletOwnerOrAdmin(fromWallet);
+        if (fromWallet.getOrganization() == null || !orgId.equals(fromWallet.getOrganization().getId())) {
+            throw new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND));
+        }
+        securityAccess.requireWalletOrgRole(fromWallet,
+                OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.ACCOUNTANT);
+        transactionQuotaService.assertWithinQuota(orgId);
+        transactionLimitService.assertTransferAllowed(orgId, request.getAmount());
 
-        if (fromWallet.getBalance().compareTo(request.getAmount()) < 0)
+        if (fromWallet.getBalance().compareTo(request.getAmount()) < 0) {
             throw new InsufficientFundsException(messageConfig.getMessage(ERROR_INSUFFICIENT_FUNDS));
+        }
 
         fromWallet.setBalance(fromWallet.getBalance().subtract(request.getAmount()));
         toWallet.setBalance(toWallet.getBalance().add(request.getAmount()));
@@ -164,104 +271,145 @@ public class WalletService {
         walletRepository.save(toWallet);
         log.info(messageConfig.getMessage(INFO_WALLET_BALANCES_UPDATED, fromWallet.getId(), toWallet.getId()));
 
-        final CommandResponse response = transactionService.create(request);
-        return CommandResponse.builder().id(response.id()).build();
+        request.setTypeId(TYPE_TRANSFER);
+        Transaction transaction = transactionService.createEntity(request);
+        ledgerService.postTransfer(transaction, fromWallet, toWallet, request.getAmount(), currencyOf(fromWallet));
+
+        idempotencyService.remember(orgId, userId, OP_TRANSFER, idempotencyKey, transaction.getId());
+        return CommandResponse.completed(transaction.getId());
     }
 
-    /**
-     * Adds funds to the given wallet.
-     *
-     * @param request
-     * @return id of the transaction
-     */
     @Transactional
-    public CommandResponse addFunds(TransactionRequest request) {
+    public CommandResponse addFunds(TransactionRequest request, String idempotencyKey) {
+        final Long orgId = securityAccess.requireActiveOrganizationIdForMutation();
+        securityAccess.requireOrgRole(orgId,
+                OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.ACCOUNTANT);
+
+        final Long userId = securityAccess.currentUser().getId();
+        Optional<Long> existing = idempotencyService.findResponseId(orgId, OP_ADD_FUNDS, idempotencyKey);
+        if (existing.isPresent()) {
+            return CommandResponse.completed(existing.get());
+        }
+
         final Wallet toWallet = getByIbanForUpdate(request.getToWalletIban());
-        securityAccess.requireWalletOwnerOrAdmin(toWallet);
+        securityAccess.requireWalletInActiveOrg(toWallet);
+        transactionQuotaService.assertWithinQuota(orgId);
+        transactionLimitService.assertTopUpAllowed(orgId, request.getAmount());
+
+        RailResult railResult = paymentRail.initiateTopUp(
+                toWallet.getIban(), request.getAmount(), request.getDescription());
+        if (railResult.status() != Status.SUCCESS) {
+            throw new IllegalStateException("Payment rail did not complete top-up: " + railResult.status());
+        }
 
         toWallet.setBalance(toWallet.getBalance().add(request.getAmount()));
-
         walletRepository.save(toWallet);
         log.info(messageConfig.getMessage(INFO_WALLET_BALANCE_UPDATED, toWallet.getId()));
 
-        final CommandResponse response = transactionService.create(request);
-        return CommandResponse.builder().id(response.id()).build();
+        request.setTypeId(TYPE_TOP_UP);
+        Transaction transaction = transactionService.createEntity(request);
+        ledgerService.postTopUp(transaction, toWallet, request.getAmount(), currencyOf(toWallet));
+
+        idempotencyService.remember(orgId, userId, OP_ADD_FUNDS, idempotencyKey, transaction.getId());
+        return CommandResponse.completed(transaction.getId());
     }
 
-    /**
-     * Withdraw funds from the given wallet.
-     * Debit wallet is locked pessimistically to prevent double-spend races.
-     *
-     * @param request
-     * @return id of the transaction
-     */
     @Transactional
-    public CommandResponse withdrawFunds(TransactionRequest request) {
-        final Wallet fromWallet = getByIbanForUpdate(request.getFromWalletIban());
-        securityAccess.requireWalletOwnerOrAdmin(fromWallet);
+    public CommandResponse withdrawFunds(TransactionRequest request, String idempotencyKey) {
+        final Long orgId = securityAccess.requireActiveOrganizationIdForMutation();
+        securityAccess.requireOrgRole(orgId,
+                OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.ACCOUNTANT);
 
-        if (fromWallet.getBalance().compareTo(request.getAmount()) < 0)
+        Optional<Long> existing = idempotencyService.findResponseId(orgId, OP_WITHDRAW, idempotencyKey);
+        if (existing.isPresent()) {
+            return CommandResponse.completed(existing.get());
+        }
+
+        final Wallet fromWallet = getByIban(request.getFromWalletIban());
+        securityAccess.requireWalletInActiveOrg(fromWallet);
+
+        if (transactionLimitService.requiresDualControl(orgId, request.getAmount())) {
+            transactionQuotaService.assertWithinQuota(orgId);
+            return spendRequestService.createPending(orgId, OP_WITHDRAW, request);
+        }
+
+        return executeWithdraw(request, idempotencyKey, orgId);
+    }
+
+    @Transactional
+    public CommandResponse executeWithdraw(TransactionRequest request, String idempotencyKey, Long orgId) {
+        final Long userId = securityAccess.currentUser().getId();
+        Optional<Long> existing = idempotencyService.findResponseId(orgId, OP_WITHDRAW, idempotencyKey);
+        if (existing.isPresent()) {
+            return CommandResponse.completed(existing.get());
+        }
+
+        final Wallet fromWallet = getByIbanForUpdate(request.getFromWalletIban());
+        if (fromWallet.getOrganization() == null || !orgId.equals(fromWallet.getOrganization().getId())) {
+            throw new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND));
+        }
+        securityAccess.requireWalletOrgRole(fromWallet,
+                OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.ACCOUNTANT);
+        transactionQuotaService.assertWithinQuota(orgId);
+        transactionLimitService.assertWithdrawAllowed(orgId, request.getAmount());
+
+        if (fromWallet.getBalance().compareTo(request.getAmount()) < 0) {
             throw new InsufficientFundsException(messageConfig.getMessage(ERROR_INSUFFICIENT_FUNDS));
+        }
+
+        RailResult railResult = paymentRail.initiateWithdraw(
+                fromWallet.getIban(), request.getAmount(), request.getDescription());
+        if (railResult.status() != Status.SUCCESS) {
+            throw new IllegalStateException("Payment rail did not complete withdraw: " + railResult.status());
+        }
 
         fromWallet.setBalance(fromWallet.getBalance().subtract(request.getAmount()));
-
         walletRepository.save(fromWallet);
         log.info(messageConfig.getMessage(INFO_WALLET_BALANCE_UPDATED, fromWallet.getId()));
 
-        final CommandResponse response = transactionService.create(request);
-        return CommandResponse.builder().id(response.id()).build();
+        request.setTypeId(TYPE_WITHDRAW);
+        Transaction transaction = transactionService.createEntity(request);
+        ledgerService.postWithdraw(transaction, fromWallet, request.getAmount(), currencyOf(fromWallet));
+
+        idempotencyService.remember(orgId, userId, OP_WITHDRAW, idempotencyKey, transaction.getId());
+        return CommandResponse.completed(transaction.getId());
     }
 
-    /**
-     * Updates wallet name/iban only. Balance, owner, and id are not client-controllable.
-     *
-     * @param request
-     * @return id of the updated wallet
-     */
     @Transactional
     public CommandResponse update(long id, WalletRequest request) {
         final Wallet foundWallet = walletRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
-        securityAccess.requireWalletOwnerOrAdmin(foundWallet);
+        securityAccess.requireWalletOrgRole(foundWallet,
+                OrganizationRole.OWNER, OrganizationRole.ADMIN, OrganizationRole.ACCOUNTANT);
 
-        final Long ownerId = foundWallet.getUser().getId();
+        final Long orgId = foundWallet.getOrganization().getId();
 
-        if (!request.getIban().equalsIgnoreCase(foundWallet.getIban()) &&
-                walletRepository.existsByIbanIgnoreCase(request.getIban()))
-            throw new ElementAlreadyExistsException(messageConfig.getMessage(ERROR_WALLET_IBAN_EXISTS));
-
-        if (!request.getName().equalsIgnoreCase(foundWallet.getName()) &&
-                walletRepository.existsByUserIdAndNameIgnoreCase(ownerId, request.getName()))
+        if (!request.getName().equalsIgnoreCase(foundWallet.getName())
+                && walletRepository.existsByOrganizationIdAndNameIgnoreCase(orgId, request.getName())) {
             throw new ElementAlreadyExistsException(messageConfig.getMessage(ERROR_WALLET_NAME_EXISTS));
+        }
 
-        ibanValidator.isValid(request.getIban(), null);
-
-        foundWallet.setIban(org.apache.commons.lang3.StringUtils.upperCase(request.getIban()));
         foundWallet.setName(org.apache.commons.text.WordUtils.capitalizeFully(request.getName()));
         walletRepository.save(foundWallet);
         log.info(messageConfig.getMessage(INFO_WALLET_UPDATED, foundWallet.getId()));
-        return CommandResponse.builder().id(id).build();
+        return CommandResponse.completed(id);
     }
 
-    /**
-     * Fetches a wallet by IBAN with a pessimistic write lock (must be called inside a transaction).
-     */
     public Wallet getByIbanForUpdate(String iban) {
         return walletRepository.findByIbanForUpdate(iban)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
     }
 
-    /**
-     * Deletes wallet by the given id.
-     *
-     * @param id
-     */
     @Transactional
     public void deleteById(long id) {
         final Wallet wallet = walletRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementFoundException(messageConfig.getMessage(ERROR_WALLET_NOT_FOUND)));
-        securityAccess.requireWalletOwnerOrAdmin(wallet);
+        securityAccess.requireWalletOrgRole(wallet, OrganizationRole.OWNER, OrganizationRole.ADMIN);
         walletRepository.delete(wallet);
         log.info(messageConfig.getMessage(INFO_WALLET_DELETED, wallet.getId()));
+    }
+
+    private static String currencyOf(Wallet wallet) {
+        return wallet.getCurrency() != null ? wallet.getCurrency() : CURRENCY_VND;
     }
 }

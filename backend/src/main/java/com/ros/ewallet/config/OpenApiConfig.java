@@ -9,8 +9,8 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@OpenAPIDefinition(info = @Info(title = "e-wallet REST API", version = "1.0",
-        description = "Application used for a digital wallet",
+@OpenAPIDefinition(info = @Info(title = "Digital Purse REST API", version = "1.0",
+        description = "Vietnam SME Digital Purse — organizations, wallets, transfers, and dual-control spend",
         contact = @Contact(name = "Murat Yıldız")),
         security = {@SecurityRequirement(name = "bearerToken")}
 )

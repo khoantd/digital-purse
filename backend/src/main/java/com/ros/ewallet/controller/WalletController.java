@@ -96,8 +96,10 @@ public class WalletController {
      */
     @PreAuthorize("hasRole(T(com.ros.ewallet.domain.enums.RoleType).ROLE_USER)")
     @PostMapping("/transfer")
-    public ResponseEntity<CommandResponse> transferFunds(@Valid @RequestBody TransactionRequest request) {
-        final CommandResponse response = walletService.transferFunds(request);
+    public ResponseEntity<CommandResponse> transferFunds(
+            @Valid @RequestBody TransactionRequest request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        final CommandResponse response = walletService.transferFunds(request, idempotencyKey);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -109,8 +111,10 @@ public class WalletController {
      */
     @PreAuthorize("hasRole(T(com.ros.ewallet.domain.enums.RoleType).ROLE_USER)")
     @PostMapping("/addFunds")
-    public ResponseEntity<CommandResponse> addFunds(@Valid @RequestBody TransactionRequest request) {
-        final CommandResponse response = walletService.addFunds(request);
+    public ResponseEntity<CommandResponse> addFunds(
+            @Valid @RequestBody TransactionRequest request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        final CommandResponse response = walletService.addFunds(request, idempotencyKey);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -122,8 +126,10 @@ public class WalletController {
      */
     @PreAuthorize("hasRole(T(com.ros.ewallet.domain.enums.RoleType).ROLE_USER)")
     @PostMapping("/withdrawFunds")
-    public ResponseEntity<CommandResponse> withdrawFunds(@Valid @RequestBody TransactionRequest request) {
-        final CommandResponse response = walletService.withdrawFunds(request);
+    public ResponseEntity<CommandResponse> withdrawFunds(
+            @Valid @RequestBody TransactionRequest request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        final CommandResponse response = walletService.withdrawFunds(request, idempotencyKey);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

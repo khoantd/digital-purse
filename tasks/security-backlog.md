@@ -48,7 +48,7 @@
   - Problem: DB password + JWT secret in repo; old weak secret lives in history.
   - Fix: gitignore `.env.properties`, add `.env.example` placeholders, rotate DB password + JWT secret in all envs, purge history (`git filter-repo`) if repo is/was public.
   - Accept: `git log --all -- .env.properties` shows no secrets; fresh clone runs from `.env.example`.
-  - Done (partial): `.env.properties` gitignored + removed from index; `.env.example` added; local `jwt_secret` rotated. **Still needed before deploy:** rotate DB password in all envs; purge git history (`git filter-repo`) and force-push — deferred pending explicit approval (rewrites public history).
+  - Done: `.env.properties` / `.env` gitignored + removed from index; `.env.example` placeholders only; local `jwt_secret` + `db_password` rotated (2026-09-30); **git history purged** with `git filter-repo` (removed `^\.env$` and `^\.env\.properties$` from all commits); **force-pushed** rewritten `master` to `origin` (`88f90e5...8f0f313`).
 
 - [x] **SEC-05 — No amount validation (ledger manipulation)**
   - Severity: Critical
@@ -70,7 +70,7 @@
   - Problem: client controls `id` (flows into `save()` → merge risk), `userId` (create wallet for another user), opening `balance`.
   - Fix: remove `id`/`status`/`referenceNumber`/`createdAt` from request DTOs (or `@Null` + mapper ignores); derive `userId` from auth principal.
   - Accept: server-generated fields ignore/forbid client values (mapper + API tests).
-  - Done: stripped server fields from `TransactionRequest`; mapper always sets status/ref/createdAt; wallet `id` ignored; `userId` overwritten from principal; update mutates name/iban only. `TransactionRequestMapperTest` + `WalletServiceTest.create_shouldIgnoreClientUserId…`.
+  - Done: stripped server fields from `TransactionRequest`; mapper always sets status/ref/createdAt; wallet `id` ignored; `userId` overwritten from principal; update mutates name only (IBAN assigned at create). `TransactionRequestMapperTest` + `WalletServiceTest.create_shouldIgnoreClientUserId…`.
 
 - [x] **SEC-07 — JWT in `localStorage`, no revocation**
   - Severity: High

@@ -18,6 +18,9 @@ public class IbanValidator implements ConstraintValidator<ValidIban, String> {
 
     @Override
     public boolean isValid(String iban, ConstraintValidatorContext context) {
+        if (iban == null || iban.isBlank()) {
+            return true;
+        }
         String trimmed = iban.trim();
         if (trimmed.length() < IBAN_MIN_SIZE || trimmed.length() > IBAN_MAX_SIZE) {
             return false;

@@ -1,37 +1,63 @@
-import numeral from 'numeral';
+// App money is Vietnamese đồng (VND). Display uses vi-VN locale; no fractional digits.
+
+export const APP_CURRENCY = 'VND';
+export const APP_LOCALE = 'vi-VN';
+
+const vndFormatter = new Intl.NumberFormat(APP_LOCALE, {
+  style: 'currency',
+  currency: APP_CURRENCY,
+  maximumFractionDigits: 0,
+});
+
+const compactFormatter = new Intl.NumberFormat(APP_LOCALE, {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
 
 // ----------------------------------------------------------------------
 
 export function fNumber(number) {
-  return numeral(number).format();
+  const n = Number(number);
+  if (!Number.isFinite(n)) {
+    return '0';
+  }
+  return new Intl.NumberFormat(APP_LOCALE).format(n);
 }
 
 export function fCurrency(number) {
-  const format = number ? numeral(number).format('$0,0.00') : '';
-
-  return result(format, '.00');
+  const n = Number(number);
+  return vndFormatter.format(Number.isFinite(n) ? n : 0);
 }
 
 export function fPercent(number) {
-  const format = number ? numeral(Number(number) / 100).format('0.0%') : '';
-
-  return result(format, '.0');
+  const n = Number(number);
+  if (!Number.isFinite(n)) {
+    return '';
+  }
+  return new Intl.NumberFormat(APP_LOCALE, {
+    style: 'percent',
+    maximumFractionDigits: 1,
+  }).format(n / 100);
 }
 
 export function fShortenNumber(number) {
-  const format = number ? numeral(number).format('0.00a') : '';
-
-  return result(format, '.00');
+  const n = Number(number);
+  if (!Number.isFinite(n)) {
+    return '0';
+  }
+  return compactFormatter.format(n);
 }
 
 export function fData(number) {
-  const format = number ? numeral(number).format('0.0 b') : '';
-
-  return result(format, '.0');
-}
-
-function result(format, key = '.00') {
-  const isInteger = format.includes(key);
-
-  return isInteger ? format.replace(key, '') : format;
+  const n = Number(number);
+  if (!Number.isFinite(n) || n === 0) {
+    return '';
+  }
+  return new Intl.NumberFormat(APP_LOCALE, {
+    style: 'unit',
+    unit: 'byte',
+    unitDisplay: 'narrow',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(n);
 }

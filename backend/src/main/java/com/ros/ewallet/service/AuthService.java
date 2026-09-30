@@ -39,6 +39,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final SignupRequestMapper signupRequestMapper;
     private final UserDetailsServiceImpl userDetailsService;
+    private final OrganizationService organizationService;
 
     /**
      * Authenticates users by their credentials.
@@ -138,8 +139,9 @@ public class AuthService {
 
         final User user = signupRequestMapper.toUser(request);
         userRepository.save(user);
+        organizationService.createDefaultForUser(user);
         log.info(messageConfig.getMessage(INFO_USER_CREATED, user.getId()));
-        return CommandResponse.builder().id(user.getId()).build();
+        return CommandResponse.completed(user.getId());
     }
 
     /**

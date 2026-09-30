@@ -88,7 +88,9 @@ class SecurityHeadersAndCorsTest {
                 HttpHeaders.CONTENT_TYPE,
                 HttpHeaders.ACCEPT,
                 HttpHeaders.ORIGIN,
-                "X-Requested-With"
+                "X-Requested-With",
+                "Idempotency-Key",
+                "X-Organization-Id"
         ));
         configuration.setAllowCredentials(true);
         configuration.setExposedHeaders(List.of(HttpHeaders.SET_COOKIE));

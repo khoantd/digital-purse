@@ -18,4 +18,12 @@ public class Constants {
     /** Minimum password length for signup (SEC-13). */
     public static final int PASSWORD_MIN_LENGTH = 12;
     public static final int PASSWORD_MAX_LENGTH = 100;
+    /** Default (and currently only) wallet currency. */
+    public static final String CURRENCY_VND = "VND";
+
+    /** Transaction type catalog (see Flyway V5 / V12 / V15). */
+    public static final long TYPE_TRANSFER = 1L;
+    public static final long TYPE_WITHDRAW = 2L;
+    public static final long TYPE_TOP_UP = 3L;
+    public static final long TYPE_REVERSE = 4L;
 }

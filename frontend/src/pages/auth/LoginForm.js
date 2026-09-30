@@ -5,11 +5,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Iconify from '../../components/iconify';
 import AuthService from '../../services/AuthService';
+import { ensureActiveOrganization } from '../../services/ensureOrganization';
 
 export default function LoginForm() {
   const defaultValues = {
-    username: 'johndoe',
-    password: 'johnd@e',
+    username: 'smeowner',
+    password: 'DemoPassword1!',
   };
 
   const navigate = useNavigate();
@@ -28,7 +29,8 @@ export default function LoginForm() {
   const handleSubmit = (event) => {
     event.preventDefault();
     AuthService.login(formValues)
-      .then((response) => {
+      .then(() => ensureActiveOrganization())
+      .then(() => {
         navigate('/');
       })
       .catch((error) => {
@@ -43,44 +45,44 @@ export default function LoginForm() {
   };
 
   return (
-    <>
-      <Stack spacing={3}>
-        <TextField
-          id="username"
-          name="username"
-          label="Username"
-          autoComplete="username"
-          required
-          autoFocus
-          value={formValues.username}
-          onChange={handleInputChange}
-        />
-        <TextField
-          id="password"
-          name="password"
-          label="Password"
-          autoComplete="current-password"
-          type={showPassword ? 'text' : 'password'}
-          required
-          value={formValues.password}
-          onChange={handleInputChange}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                  <Iconify icon={showPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
-      </Stack>
-
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ my: 2 }} />
-
-      <LoadingButton fullWidth size="large" type="submit" variant="contained" onClick={handleSubmit}>
+    <Stack component="form" onSubmit={handleSubmit} spacing={3}>
+      <TextField
+        id="username"
+        name="username"
+        label="Username"
+        autoComplete="username"
+        required
+        autoFocus
+        value={formValues.username}
+        onChange={handleInputChange}
+      />
+      <TextField
+        id="password"
+        name="password"
+        label="Password"
+        autoComplete="current-password"
+        type={showPassword ? 'text' : 'password'}
+        required
+        value={formValues.password}
+        onChange={handleInputChange}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                onClick={() => setShowPassword(!showPassword)}
+                edge="end"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                sx={{ cursor: 'pointer' }}
+              >
+                <Iconify icon={showPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
+      />
+      <LoadingButton fullWidth size="large" type="submit" variant="contained" sx={{ cursor: 'pointer' }}>
         Log in
       </LoadingButton>
-    </>
+    </Stack>
   );
 }

@@ -6,9 +6,19 @@ import Typography from '@mui/material/Typography';
 import PropTypes from 'prop-types';
 import * as React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useSearchParams } from 'react-router-dom';
+import Iconify from '../../components/iconify';
 import AddFunds from './AddFunds';
 import WalletToWallet from './WalletToWallet';
 import WithdrawFunds from './WithdrawFunds';
+
+/** Maps URL ?tab= to money endpoints: transfer / addFunds / withdrawFunds */
+const TAB_KEYS = ['send', 'add', 'withdraw'];
+
+function tabIndexFromParam(tab) {
+  const idx = TAB_KEYS.indexOf(String(tab || '').toLowerCase());
+  return idx >= 0 ? idx : 0;
+}
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -21,11 +31,7 @@ function TabPanel(props) {
       aria-labelledby={`simple-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 0 }}>
-          <Typography>{children}</Typography>
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: { xs: 2.5, md: 4 } }}>{children}</Box>}
     </div>
   );
 }
@@ -44,42 +50,64 @@ function a11yProps(index) {
 }
 
 export default function BasicTabs() {
-  const [value, setValue] = React.useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const value = tabIndexFromParam(searchParams.get('tab'));
 
-  const handleChange = (event, newValue) => {
-    setValue(newValue);
+  const handleChange = (_event, newValue) => {
+    setSearchParams({ tab: TAB_KEYS[newValue] }, { replace: true });
   };
 
   return (
     <>
       <Helmet>
-        <title> Transfers | e-Wallet </title>
+        <title> Transfers | Digital Purse </title>
       </Helmet>
       <Container sx={{ minWidth: '100%' }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
-          <Typography variant="h4" gutterBottom>
-            Transfers
+        <Stack spacing={0.5} sx={{ mb: 3 }}>
+          <Typography variant="h4">Transfers</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Send, top up, or withdraw for the active organization. Large outbound amounts may require dual-control
+            approval.
           </Typography>
         </Stack>
-        <Card>
-          <Box sx={{ width: '100%', padding: 0, pt: 1 }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
-                <Tab label="Wallet to Wallet" {...a11yProps(0)} />
-                <Tab label="Add Funds" {...a11yProps(1)} />
-                <Tab label="Withdraw Funds" {...a11yProps(2)} />
-              </Tabs>
-            </Box>
-            <TabPanel value={value} index={0}>
-              <WalletToWallet />
-            </TabPanel>
-            <TabPanel value={value} index={1}>
-              <AddFunds />
-            </TabPanel>
-            <TabPanel value={value} index={2}>
-              <WithdrawFunds />
-            </TabPanel>
+        <Card sx={{ borderRadius: 2, maxWidth: 720 }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', px: { xs: 1, md: 2 }, pt: 1 }}>
+            <Tabs
+              value={value}
+              onChange={handleChange}
+              aria-label="Transfer actions"
+              variant="scrollable"
+              allowScrollButtonsMobile
+            >
+              <Tab
+                icon={<Iconify icon="eva:swap-outline" width={18} height={18} />}
+                iconPosition="start"
+                label="Send"
+                {...a11yProps(0)}
+              />
+              <Tab
+                icon={<Iconify icon="eva:plus-fill" width={18} height={18} />}
+                iconPosition="start"
+                label="Add funds"
+                {...a11yProps(1)}
+              />
+              <Tab
+                icon={<Iconify icon="eva:arrow-downward-fill" width={18} height={18} />}
+                iconPosition="start"
+                label="Withdraw"
+                {...a11yProps(2)}
+              />
+            </Tabs>
           </Box>
+          <TabPanel value={value} index={0}>
+            <WalletToWallet />
+          </TabPanel>
+          <TabPanel value={value} index={1}>
+            <AddFunds />
+          </TabPanel>
+          <TabPanel value={value} index={2}>
+            <WithdrawFunds />
+          </TabPanel>
         </Card>
       </Container>
     </>

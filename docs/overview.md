@@ -1,12 +1,12 @@
 # Overview
 
-# E-Wallet Project Documentation  
+# Digital Purse Project Documentation  
   
 ## Overview  
-The E-Wallet project is a digital wallet management system designed to facilitate transactions through a robust REST API. This document outlines the project architecture, key decisions, and development guidelines.  
+The Digital Purse project is a digital wallet management system designed to facilitate transactions through a robust REST API. This document outlines the project architecture, key decisions, and development guidelines.  
   
 ## Repository  
-E-Wallet source code is hosted on GitHub: \[e-wallet\](https://github.com/khoantd/e-wallet.git)  
+Digital Purse source code is hosted on GitHub: \[e-wallet\](https://github.com/khoantd/e-wallet.git)  
   
 ## Architecture  
   
@@ -18,7 +18,7 @@ The project will utilize \*\*Spring Boot\*\* as the backend framework to support
 - \*\*IBAN Validation:\*\* Validate International Bank Account Numbers for payments.  
   
 ### Dependencies  
-The core dependencies for the E-Wallet include:  
+The core dependencies for the Digital Purse include:  
   
 - \*\*PostgreSQL:\*\* Database for storing user and transaction data.  
 - \*\*Spring Data JPA:\*\* Simplified data access and manipulation.  
@@ -60,4 +60,4 @@ Implement unit and integration tests using JUnit and Mockito to ensure the relia
 Follow standard CI/CD practices for deploying the application, leveraging GitHub Actions or similar tools for automated builds and testing.  
   
 ## Conclusion  
-This document serves as a high-level guide for developing the E-Wallet project using Spring Boot. It is critical for the team to stay aligned with the established architecture and decisions while ensuring adherence to best practices in software development.
+This document serves as a high-level guide for developing the Digital Purse project using Spring Boot. It is critical for the team to stay aligned with the established architecture and decisions while ensuring adherence to best practices in software development.

@@ -17,7 +17,7 @@ export default function Page404() {
   return (
     <>
       <Helmet>
-        <title> Unauthorized | e-wallet </title>
+        <title> Unauthorized | Digital Purse </title>
       </Helmet>
       <Container>
         <StyledContent sx={{ textAlign: 'center', alignItems: 'center' }}>
