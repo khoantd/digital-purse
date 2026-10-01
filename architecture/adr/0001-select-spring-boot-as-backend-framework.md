@@ -1,8 +1,7 @@
 ---
 number: 1
-status: proposed
+status: accepted
 ---
-
 ---
 number: 1
 title: Select Spring Boot as Backend Framework
