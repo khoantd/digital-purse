@@ -23,6 +23,11 @@ specification {
 
   relationship sync
   relationship async
+
+deploymentNode kubernetes
+deploymentNode vm
+
+deploymentNode namespace
 }
 
 model {
@@ -42,6 +47,22 @@ model {
   eWallet.apiService -> eWallet.transactionDb 'stores transaction data'
 }
 
+deployment {
+environment prod {
+    region euWest1 {
+      kubernetes cluster {
+        namespace eWalletNs {
+          instanceOf eWallet.apiService
+          instanceOf eWallet.transactionDb
+        }
+      }
+      vm dbHost {
+        instanceOf eWallet.transactionDb
+      }
+    }
+  }
+}
+
 views {
   view index {
     title 'E-Wallet System Landscape'
@@ -59,5 +80,11 @@ views {
     title 'User Transaction Flow'
     user -> eWallet.apiService 'initiates transaction'
     eWallet.apiService -> eWallet.transactionDb 'records transaction'
+  }
+
+deployment view prodDeployment {
+    title 'Production Deployment Architecture'
+    include *
+    autoLayout TopBottom
   }
 }
